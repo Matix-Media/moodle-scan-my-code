@@ -1,5 +1,8 @@
-import axios from "npm:axios";
-import { EmbedBuilder, Events } from "npm:discord.js";
+import axios from "axios";
+import { EmbedBuilder, Events } from "discord.js";
+import { Jimp } from "jimp";
+import fetch from "node-fetch";
+import QRCodeReader from "qrcode-reader";
 import { ObjectEvent } from "../bot.ts";
 
 const messageEvent: ObjectEvent<Events.MessageCreate> = {
@@ -24,14 +27,30 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
             console.log("Processing QR code...");
 
             console.log("Downloading attachment");
-            const imageRes = await axios.get(attachment.url);
-            console.log("Decoding QR code at remote server");
-            const qrRes = await axios.postForm(
-                "https://api.qrserver.com/v1/read-qr-code/",
-                { file: imageRes.data },
-                { headers: { "Content-Type": "multipart/form-data" } },
-            );
-            console.log(qrRes.data);
+            const imageRes = await downloadImage(attachment.url);
+
+            console.log("Decoding QR code");
+            const qrRes = await decodeQRCode(imageRes);
+
+            console.log("Content:", qrRes);
+
+            if (!qrRes.startsWith(bot.moodleUrlBase)) {
+                console.log("QR code does not start with expected URL");
+                const embed = new EmbedBuilder()
+                    .setColor(0xf48d2b)
+                    .setDescription("QR-Code enthält keine gültige URL ☹️")
+                    .setThumbnail(attachment.url);
+                await message.reply({ embeds: [embed] });
+                return;
+            }
+
+            const embed = new EmbedBuilder()
+                .setColor(0xf48d2b)
+                .setDescription(`QR-Code gefunden 🎉${qrRes}`)
+                .setTitle("Hier klicken, um Anwesenheit zu erfassen")
+                .setURL(qrRes);
+            await message.reply({ embeds: [embed] });
+            console.log("Successfully processed qr code");
         } catch (e) {
             if (axios.isAxiosError(e)) {
                 console.log(e.response?.data ?? e);
@@ -41,24 +60,35 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
             const embed = new EmbedBuilder().setColor(0xf48d2b).setDescription("QR-Code konnte nicht erkannt werden ☹️").setThumbnail(attachment.url);
             await message.reply({ embeds: [embed] });
         }
-
-        /*
-
-        if (!qrResult.data.startsWith(bot.moodleUrlBase)) {
-            console.log("QR code does not start with expected URL");
-            const embed = new EmbedBuilder().setColor(0xf48d2b).setDescription("QR-Code enthält keine URL ☹️");
-            await message.reply({ embeds: [embed] });
-            return;
-        }
-
-        const embed = new EmbedBuilder()
-            .setColor(0xf48d2b)
-            .setDescription(`QR-Code gefunden 🎉${qrResult.data}`)
-            .setTitle("Hier klicken, um Anwesenheit zu erfassen")
-            .setURL(qrResult.data);
-        await message.reply({ embeds: [embed] });
-        console.log("Successfully processed qr code");*/
     },
 };
+
+async function downloadImage(url: string): Promise<ArrayBuffer> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch image from URL: ${response.statusText}`);
+    }
+    const buffer = await response.arrayBuffer();
+    return buffer;
+}
+
+async function decodeQRCode(buffer: ArrayBuffer): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+        let image: Awaited<ReturnType<typeof Jimp.read>>;
+        try {
+            image = await Jimp.read(buffer);
+        } catch (err) {
+            return reject(err);
+        }
+        const qr = new QRCodeReader();
+        qr.callback = (error: Error | null, value: { result: string }) => {
+            if (error) {
+                return reject(error);
+            }
+            resolve(value.result);
+        };
+        qr.decode(image.bitmap);
+    });
+}
 
 export default messageEvent;

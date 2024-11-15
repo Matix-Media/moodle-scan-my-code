@@ -1,4 +1,5 @@
-import { Client, ClientEvents, Events, GatewayIntentBits } from "npm:discord.js";
+import { Client, ClientEvents, Events, GatewayIntentBits } from "discord.js";
+import * as dotenv from "dotenv";
 import messageEvent from "./events/message.ts";
 
 export default class Bot {
@@ -9,17 +10,18 @@ export default class Bot {
     public moodleUrlBase: string;
 
     constructor() {
-        const token = Deno.env.get("DISCORD_TOKEN");
+        dotenv.config();
+        const token = process.env.DISCORD_TOKEN;
         if (token === undefined) {
             throw new Error("DISCORD_TOKEN is not defined");
         }
         this.token = token;
-        const codeChannelId = Deno.env.get("SCOPED_CHANNEL_ID");
+        const codeChannelId = process.env.SCOPED_CHANNEL_ID;
         if (codeChannelId === undefined) {
             throw new Error("SCOPED_CHANNEL_ID is not defined");
         }
         this.codeChannelId = codeChannelId;
-        const moodleUrlBase = Deno.env.get("MOODLE_URL_BASE");
+        const moodleUrlBase = process.env.MOODLE_URL_BASE;
         if (moodleUrlBase === undefined) {
             throw new Error("MOODLE_URL_BASE is not defined");
         }
@@ -35,7 +37,7 @@ export default class Bot {
     public async start() {
         console.log("Starting bot...");
 
-        await this.client.login(Deno.env.get("DISCORD_TOKEN"));
+        await this.client.login(this.token);
 
         console.log("Registering events...");
         const events = [messageEvent];
