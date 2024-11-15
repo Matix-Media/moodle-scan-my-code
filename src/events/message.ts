@@ -34,7 +34,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
 
             console.log("Content:", qrRes);
 
-            if (!qrRes.startsWith(bot.moodleUrlBase)) {
+            if (!qrRes.startsWith(bot.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=")) {
                 console.log("QR code does not start with expected URL");
                 const embed = new EmbedBuilder()
                     .setColor(0xf48d2b)
