@@ -4,9 +4,9 @@ import { ObjectCommand } from "../bot";
 import { users } from "../db/schema";
 import MoodleSession from "../moodle/session";
 
-const signupCommand: ObjectCommand = {
+const loginCommand: ObjectCommand = {
     data: new SlashCommandBuilder()
-        .setName("signup")
+        .setName("login")
         .setDescription("Moodle Anmeldedaten für eine automatische Anwesenheitserfassung angeben")
         .addStringOption((option) => option.setName("username").setDescription("Dein Moodle Benutzername").setRequired(true))
         .addStringOption((option) => option.setName("password").setDescription("Dein Passwort").setRequired(true)),
@@ -67,4 +67,4 @@ const signupCommand: ObjectCommand = {
     },
 };
 
-export default signupCommand;
+export default loginCommand;

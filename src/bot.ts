@@ -13,13 +13,13 @@ import {
 import * as dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import logoutCommand from "./commands/logout.ts";
-import signupCommand from "./commands/signup.ts";
+import loginCommand from "./commands/login.ts";
 import messageEvent from "./events/message.ts";
 
 export default class Bot {
     private token: string;
     private events = [messageEvent];
-    private commands = [signupCommand, logoutCommand];
+    private commands = [loginCommand, logoutCommand];
 
     public db: ReturnType<typeof drizzle>;
     public client: Client;
