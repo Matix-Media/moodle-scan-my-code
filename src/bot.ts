@@ -12,21 +12,22 @@ import {
 } from "discord.js";
 import * as dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
-import logoutCommand from "./commands/logout.ts";
 import loginCommand from "./commands/login.ts";
+import logoutCommand from "./commands/logout.ts";
+import statusCommand from "./commands/status.ts";
 import messageEvent from "./events/message.ts";
 
 export default class Bot {
     private token: string;
     private events = [messageEvent];
-    private commands = [loginCommand, logoutCommand];
+    private commands = [loginCommand, logoutCommand, statusCommand];
 
     public db: ReturnType<typeof drizzle>;
     public client: Client;
     public rest: REST;
     public applicationId: string;
     public guildId: string;
-    public codeChannelId: string;
+    public codeChannelIds: string[];
     public moodleUrlBase: string;
 
     constructor() {
@@ -36,11 +37,11 @@ export default class Bot {
             throw new Error("DISCORD_TOKEN is not defined");
         }
         this.token = token;
-        const codeChannelId = process.env.SCOPED_CHANNEL_ID;
-        if (codeChannelId === undefined) {
-            throw new Error("SCOPED_CHANNEL_ID is not defined");
+        const codeChannelIds = process.env.SCOPED_CHANNEL_IDS;
+        if (codeChannelIds === undefined) {
+            throw new Error("SCOPED_CHANNEL_IDS is not defined");
         }
-        this.codeChannelId = codeChannelId;
+        this.codeChannelIds = codeChannelIds.split(",").map((id) => id.trim());
         const moodleUrlBase = process.env.MOODLE_URL_BASE;
         if (moodleUrlBase === undefined) {
             throw new Error("MOODLE_URL_BASE is not defined");

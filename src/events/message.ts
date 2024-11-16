@@ -1,19 +1,20 @@
 import axios from "axios";
 import { EmbedBuilder, Events } from "discord.js";
+import { eq } from "drizzle-orm";
 import { Jimp } from "jimp";
 import fetch from "node-fetch";
 import QRCodeReader from "qrcode-reader";
 import { ObjectEvent } from "../bot.ts";
+import { users } from "../db/schema.ts";
+import MoodleSession, { AttendanceUpdateError } from "../moodle/session.ts";
 
 const messageEvent: ObjectEvent<Events.MessageCreate> = {
     name: Events.MessageCreate,
     listener: async (bot, message) => {
-        if (message.channel.id !== bot.codeChannelId) return;
+        if (!bot.codeChannelIds.includes(message.channel.id)) return;
+        if (message.guildId === null) return;
         if (message.author.bot) return;
-        if (message.attachments.size != 1) {
-            console.log("Received message with no or too many attachments");
-            return;
-        }
+        if (message.attachments.size != 1) return;
 
         console.log(`Received message from ${message.author.tag}`);
 
@@ -32,8 +33,6 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
             console.log("Decoding QR code");
             const qrRes = await decodeQRCode(imageRes);
 
-            console.log("Content:", qrRes);
-
             if (!qrRes.startsWith(bot.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=")) {
                 console.log("QR code does not start with expected URL");
                 const embed = new EmbedBuilder()
@@ -44,12 +43,86 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                 return;
             }
 
+            const qrPass = new URL(qrRes).searchParams.get("qrpass");
+            if (qrPass === null) {
+                console.log("QR code does not contain a valid QR pass");
+                const embed = new EmbedBuilder().setColor(0xf48d2b).setDescription("QR-Code enthält keinen QR Pass ☹️").setThumbnail(attachment.url);
+                await message.reply({ embeds: [embed] });
+                return;
+            }
+            const sessId = new URL(qrRes).searchParams.get("sessid");
+            if (sessId === null) {
+                console.log("QR code does not contain a valid session ID");
+                const embed = new EmbedBuilder()
+                    .setColor(0xf48d2b)
+                    .setDescription("QR-Code enthält keine Session ID ☹️")
+                    .setThumbnail(attachment.url);
+                await message.reply({ embeds: [embed] });
+                return;
+            }
+
             const embed = new EmbedBuilder()
                 .setColor(0xf48d2b)
-                .setDescription(`QR-Code gefunden 🎉${qrRes}`)
                 .setTitle("Hier klicken, um Anwesenheit zu erfassen")
+                .setDescription(
+                    "QR-Code gefunden 🎉\n\nUm deine Anwesenheit automatisch zu erfassen, nutze den `/login` Befehl, um deine Anmeldedaten zu hinterlegen.",
+                )
                 .setURL(qrRes);
             await message.reply({ embeds: [embed] });
+
+            const loggedInUsers = await bot.db.select().from(users).where(eq(users.guildId, message.guildId));
+
+            if (loggedInUsers.length > 0) {
+                console.log(`Updating attendance for logged in users (${loggedInUsers.length} total)...`);
+
+                const handleAttendanceUpdateError = async (user: typeof users.$inferSelect, err: AttendanceUpdateError) => {
+                    console.error("Error updating attendance for " + user.discordId + ":", err);
+                    const dms = await bot.client.users.createDM(user.discordId);
+                    if (err instanceof AttendanceUpdateError) {
+                        dms.send({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setColor(0xf48d2b)
+                                    .setDescription("Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n" + err.reason),
+                            ],
+                        });
+                    } else {
+                        dms.send({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setColor(0xf48d2b)
+                                    .setDescription(
+                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\nBei dem letzten Versuch, deine Anwesenheit automatisch zu erfassen, ist ein Fehler aufgetreten. Bitte überprüfe deine angegebenen Anmeldedaten.",
+                                    ),
+                            ],
+                        });
+                    }
+                };
+
+                const updateAttendance = async (user: typeof users.$inferSelect) => {
+                    console.log("Updating attendance for " + user.discordId + "...");
+                    const session = new MoodleSession(bot);
+
+                    await session.login(user.username, user.password);
+                    await session.updateAttendance(qrPass, sessId);
+                };
+
+                try {
+                    await updateAttendance(loggedInUsers[0]);
+                } catch (err) {
+                    await handleAttendanceUpdateError(loggedInUsers[0], err);
+                }
+
+                const updates: Promise<void>[] = loggedInUsers.slice(1).map(async (user) => {
+                    try {
+                        await updateAttendance(user);
+                    } catch (err) {
+                        await handleAttendanceUpdateError(user, err);
+                    }
+                });
+                await Promise.all(updates);
+            }
+
             console.log("Successfully processed qr code");
         } catch (e) {
             if (axios.isAxiosError(e)) {
