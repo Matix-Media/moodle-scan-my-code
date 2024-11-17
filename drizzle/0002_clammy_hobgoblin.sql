@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS "connections" (
 	"moodleUrlBase" text NOT NULL
 );
 --> statement-breakpoint
+DELETE FROM "users"; --> clear all users because they do not have a connection
 ALTER TABLE "users" ALTER COLUMN "username" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "users" ALTER COLUMN "password" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "connectionId" integer NOT NULL;--> statement-breakpoint
