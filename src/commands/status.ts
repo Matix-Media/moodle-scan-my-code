@@ -1,11 +1,14 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, InteractionContextType, SlashCommandBuilder } from "discord.js";
 import { and, eq } from "drizzle-orm";
 import { ObjectCommand } from "../bot";
-import { users } from "../db/schema";
+import { moodleConnection, moodleUser } from "../db/schema";
 import MoodleSession from "../moodle/session";
 
 const statusCommand: ObjectCommand = {
-    data: new SlashCommandBuilder().setName("status").setDescription("Status der Moodle Anmeldedaten überprüfen"),
+    data: new SlashCommandBuilder()
+        .setName("status")
+        .setDescription("Status der Moodle Anmeldedaten überprüfen")
+        .setContexts(InteractionContextType.Guild),
     execute: async (bot, interaction) => {
         if (interaction.guildId === null) {
             await interaction.reply({
@@ -15,10 +18,20 @@ const statusCommand: ObjectCommand = {
             return;
         }
 
+        if (!bot.isChannelConnected(interaction.channelId)) {
+            await interaction.reply({
+                embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Für diesen Channel ist keine Anwesenheitserfassung eingerichtet ☹️")],
+                ephemeral: true,
+            });
+            return;
+        }
+
         const existingUser = await bot.db
             .select()
-            .from(users)
-            .where(and(eq(users.discordId, interaction.user.id), eq(users.guildId, interaction.guildId)));
+            .from(moodleUser)
+            .leftJoin(moodleConnection, eq(moodleUser.connectionId, moodleConnection.id))
+            .where(and(eq(moodleUser.discordId, interaction.user.id), eq(moodleConnection.channelId, interaction.channelId)))
+            .limit(1);
         if (existingUser.length === 0) {
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Du hast keine Anmeldedaten gespeichert ☹️")],
@@ -33,7 +46,7 @@ const statusCommand: ObjectCommand = {
                     .setColor(0xf48d2b)
                     .setDescription(
                         "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
-                            existingUser[0].username +
+                            existingUser[0].users.username +
                             "`\n\n🔄 Überprüfe Anmeldedaten...",
                     ),
             ],
@@ -42,14 +55,14 @@ const statusCommand: ObjectCommand = {
 
         try {
             const session = new MoodleSession(bot);
-            await session.login(existingUser[0].username, existingUser[0].password);
+            await session.login(existingUser[0].users.username, existingUser[0].users.password);
             await interaction.editReply({
                 embeds: [
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
                             "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
-                                existingUser[0].username +
+                                existingUser[0].users.username +
                                 "`\n\n✅ Anmeldedaten erfolgreich überprüft 🎉",
                         ),
                 ],
@@ -61,7 +74,7 @@ const statusCommand: ObjectCommand = {
                         .setColor(0xf48d2b)
                         .setDescription(
                             "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
-                                existingUser[0].username +
+                                existingUser[0].users.username +
                                 "`\n\n⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.",
                         ),
                 ],

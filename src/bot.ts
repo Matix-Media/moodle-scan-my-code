@@ -14,20 +14,20 @@ import * as dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import loginCommand from "./commands/login.ts";
 import logoutCommand from "./commands/logout.ts";
+import setupCommand from "./commands/setup.ts";
 import statusCommand from "./commands/status.ts";
 import messageEvent from "./events/message.ts";
 
 export default class Bot {
     private token: string;
     private events = [messageEvent];
-    private commands = [loginCommand, logoutCommand, statusCommand];
+    private commands = [setupCommand, loginCommand, logoutCommand, statusCommand];
+    private connectedChannels: string[];
 
-    public db: ReturnType<typeof drizzle>;
-    public client: Client;
-    public rest: REST;
-    public applicationId: string;
-    public codeChannelIds: string[];
-    public moodleUrlBase: string;
+    public readonly db: ReturnType<typeof drizzle>;
+    public readonly client: Client;
+    public readonly rest: REST;
+    public readonly applicationId: string;
 
     constructor() {
         dotenv.config();
@@ -36,18 +36,6 @@ export default class Bot {
             throw new Error("DISCORD_TOKEN is not defined");
         }
         this.token = token;
-
-        const codeChannelIds = process.env.SCOPED_CHANNEL_IDS;
-        if (codeChannelIds === undefined) {
-            throw new Error("SCOPED_CHANNEL_IDS is not defined");
-        }
-        this.codeChannelIds = codeChannelIds.split(",").map((id) => id.trim());
-
-        const moodleUrlBase = process.env.MOODLE_URL_BASE;
-        if (moodleUrlBase === undefined) {
-            throw new Error("MOODLE_URL_BASE is not defined");
-        }
-        this.moodleUrlBase = moodleUrlBase;
 
         const applicationId = process.env.APPLICATION_ID;
         if (applicationId === undefined) {
@@ -113,6 +101,18 @@ export default class Bot {
         await this.rest.put(Routes.applicationCommands(this.applicationId), { body: commandsJson });
 
         console.log("Bot started");
+    }
+
+    public setChannelConnected(channelId: string, connected: boolean) {
+        if (connected) {
+            this.connectedChannels.push(channelId);
+        } else {
+            this.connectedChannels = this.connectedChannels.filter((id) => id !== channelId);
+        }
+    }
+
+    public isChannelConnected(channelId: string) {
+        return this.connectedChannels.includes(channelId);
     }
 }
 

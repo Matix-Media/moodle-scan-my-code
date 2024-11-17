@@ -5,24 +5,21 @@ import { Jimp } from "jimp";
 import fetch from "node-fetch";
 import QRCodeReader from "qrcode-reader";
 import { ObjectEvent } from "../bot.ts";
-import { users } from "../db/schema.ts";
+import { moodleConnection, moodleUser } from "../db/schema.ts";
 import MoodleSession, { AttendanceUpdateError, LoginError } from "../moodle/session.ts";
 
 const messageEvent: ObjectEvent<Events.MessageCreate> = {
     name: Events.MessageCreate,
     listener: async (bot, message) => {
-        if (!bot.codeChannelIds.includes(message.channel.id)) return;
         if (message.guildId === null) return;
         if (message.author.bot) return;
         if (message.attachments.size != 1) return;
-
-        console.log(`Received message from ${message.author.tag}`);
+        if (!bot.isChannelConnected(message.channelId)) return;
 
         const attachment = message.attachments.first()!;
-        if (!attachment.contentType?.startsWith("image/")) {
-            console.log("Received message with non-image attachment");
-            return;
-        }
+        if (!attachment.contentType?.startsWith("image/")) return;
+
+        const connection = (await bot.db.select().from(moodleConnection).where(eq(moodleConnection.channelId, message.channelId)).limit(1))[0];
 
         try {
             console.log("Processing QR code...");
@@ -33,7 +30,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
             console.log("Decoding QR code");
             const qrRes = await decodeQRCode(imageRes);
 
-            if (!qrRes.startsWith(bot.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=")) {
+            if (!qrRes.startsWith(connection.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=")) {
                 console.log("QR code does not start with expected URL");
                 const embed = new EmbedBuilder()
                     .setColor(0xf48d2b)
@@ -70,12 +67,12 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                 .setURL(qrRes);
             await message.reply({ embeds: [embed] });
 
-            const loggedInUsers = await bot.db.select().from(users).where(eq(users.guildId, message.guildId));
+            const loggedInUsers = await bot.db.select().from(moodleUser).where(eq(moodleUser.connectionId, connection.id));
 
             if (loggedInUsers.length > 0) {
                 console.log(`Updating attendance for logged in users (${loggedInUsers.length} total)...`);
 
-                const handleAttendanceUpdateError = async (user: typeof users.$inferSelect, err: any) => {
+                const handleAttendanceUpdateError = async (user: typeof moodleUser.$inferSelect, err: any) => {
                     console.error("Error updating attendance for " + user.discordId + ":", err);
                     const dms = await bot.client.users.createDM(user.discordId);
                     if (err instanceof AttendanceUpdateError) {
@@ -113,7 +110,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                     }
                 };
 
-                const updateAttendance = async (user: typeof users.$inferSelect) => {
+                const updateAttendance = async (user: typeof moodleUser.$inferSelect) => {
                     console.log("Updating attendance for " + user.discordId + "...");
                     const session = new MoodleSession(bot);
 
