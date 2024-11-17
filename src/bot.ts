@@ -17,6 +17,7 @@ import logoutCommand from "./commands/logout.ts";
 import setupCommand from "./commands/setup.ts";
 import statusCommand from "./commands/status.ts";
 import teardownCommand from "./commands/teardown.ts";
+import { moodleConnection } from "./db/schema.ts";
 import messageEvent from "./events/message.ts";
 
 export default class Bot {
@@ -83,6 +84,9 @@ export default class Bot {
 
     public async start() {
         console.log("Connecting to database...");
+        (await this.db.select({ channelId: moodleConnection.channelId }).from(moodleConnection)).forEach((connection) =>
+            this.setChannelConnected(connection.channelId, true),
+        );
 
         console.log("Starting bot...");
 
