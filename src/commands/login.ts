@@ -42,6 +42,7 @@ const loginCommand: ObjectCommand = {
             const session = new MoodleSession(bot);
             await session.login(username, password);
         } catch (err) {
+            console.error("Connection:", connection);
             console.error(err);
             if (err instanceof LoginError) {
                 interaction.editReply({
