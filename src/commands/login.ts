@@ -2,7 +2,7 @@ import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { and, eq } from "drizzle-orm";
 import { ObjectCommand } from "../bot";
 import { users } from "../db/schema";
-import MoodleSession from "../moodle/session";
+import MoodleSession, { LoginError } from "../moodle/session";
 
 const loginCommand: ObjectCommand = {
     data: new SlashCommandBuilder()
@@ -32,13 +32,27 @@ const loginCommand: ObjectCommand = {
             await session.login(username, password);
         } catch (err) {
             console.error(err);
-            interaction.editReply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor(0xf48d2b)
-                        .setDescription("⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.\n~~🔷 Anmeldedaten speichern~~"),
-                ],
-            });
+            if (err instanceof LoginError) {
+                interaction.editReply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor(0xf48d2b)
+                            .setDescription(
+                                `⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten${
+                                    err.reason ? ": " + err.reason : "."
+                                }\n~~🔷 Anmeldedaten speichern~~`,
+                            ),
+                    ],
+                });
+            } else {
+                interaction.editReply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor(0xf48d2b)
+                            .setDescription("⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.\n~~🔷 Anmeldedaten speichern~~"),
+                    ],
+                });
+            }
             return;
         }
 

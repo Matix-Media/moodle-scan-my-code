@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from "axios";
+import axios, { AxiosInstance } from "axios";
 import qs from "qs";
 import { CookieJar } from "tough-cookie";
 import Bot from "../bot";
@@ -72,45 +72,54 @@ export default class MoodleSession {
     async login(username: string, password: string) {
         const loginUrl = this.bot.moodleUrlBase + "/login/index.php";
 
-        const loginTokenRes = await this.client.get(loginUrl);
-        const loginTokenMatch = LOGIN_TOKEN_MATCH_REGEX.exec(loginTokenRes.data);
-        if (loginTokenMatch == null || loginTokenMatch?.length < 1) {
-            throw new Error("Could not find login token");
-        }
+        try {
+            const loginTokenRes = await this.client.get(loginUrl);
+            const loginTokenMatch = LOGIN_TOKEN_MATCH_REGEX.exec(loginTokenRes.data);
+            if (loginTokenMatch == null || loginTokenMatch?.length < 1) {
+                throw new Error("Could not find login token");
+            }
 
-        let res: AxiosResponse | undefined;
-        res = await this.client.post(loginUrl, qs.stringify({ username, password, logintoken: loginTokenMatch[1] }), {
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-        });
+            const loginRes = await this.client.post(loginUrl, qs.stringify({ username, password, logintoken: loginTokenMatch[1] }), {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            });
 
-        if (!res || res.config.url !== this.bot.moodleUrlBase + "/") {
-            const loginErrorMatch = LOGIN_ERROR_MATCH_REGEX.exec(res?.data ?? "");
-            if (loginErrorMatch != null && loginErrorMatch?.length > 1) {
-                throw new LoginError("Login failed", loginErrorMatch[1]);
-            } else throw new LoginError("Login failed");
+            if (!loginRes || loginRes.config.url !== this.bot.moodleUrlBase + "/") {
+                const loginErrorMatch = LOGIN_ERROR_MATCH_REGEX.exec(loginRes?.data ?? "");
+                if (loginErrorMatch != null && loginErrorMatch?.length > 1) {
+                    throw new LoginError("Login failed", loginErrorMatch[1]);
+                } else throw new LoginError("Login failed");
+            }
+        } catch (err) {
+            if (axios.isAxiosError(err) && err.response) {
+                const loginErrorMatch = LOGIN_ERROR_MATCH_REGEX.exec(err.response.data ?? "");
+                if (loginErrorMatch != null && loginErrorMatch?.length > 1) 
+                    throw new LoginError("Login failed", loginErrorMatch[1]);
+                else throw new LoginError("Login failed", err.message);
+            } else throw new LoginError("Login failed", String(err));
         }
     }
 
     async updateAttendance(qrPass: string, sessId: string) {
+        const attendanceUrl = this.bot.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=" + qrPass + "&sessid=" + sessId;
+
         try {
-            const attendanceUrl = this.bot.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=" + qrPass + "&sessid=" + sessId;
             await this.client.get(attendanceUrl);
         } catch (err) {
             if (axios.isAxiosError(err) && err.response) {
                 const attendanceErrorMatch = ATTENDANCE_ERROR_MATCH_REGEX.exec(err.response.data ?? "");
                 if (attendanceErrorMatch != null && attendanceErrorMatch?.length > 1) {
                     throw new AttendanceUpdateError("Attendance update failed", attendanceErrorMatch[1]);
-                } else throw err;
-            }
+                } else throw new AttendanceUpdateError("Attendance update failed", err.message);
+            } else throw new AttendanceUpdateError("Attendance update failed", String(err));
         }
     }
 }
 
 export class AttendanceUpdateError extends Error {
-    public reason: string;
-    constructor(message: string, reason: string) {
+    public reason: string | undefined;
+    constructor(message: string, reason?: string) {
         super(message);
         this.name = "AttendanceUpdateError";
         this.reason = reason;
