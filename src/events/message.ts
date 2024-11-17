@@ -110,16 +110,16 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                     }
                 };
 
-                const updateAttendance = async (user: typeof moodleUser.$inferSelect) => {
+                const updateAttendance = async (user: typeof moodleUser.$inferSelect, connection: typeof moodleConnection.$inferSelect) => {
                     console.log("Updating attendance for " + user.discordId + "...");
-                    const session = new MoodleSession(bot);
+                    const session = new MoodleSession(bot, connection);
 
                     await session.login(user.username, user.password);
                     await session.updateAttendance(qrPass, sessId);
                 };
 
                 try {
-                    await updateAttendance(loggedInUsers[0]);
+                    await updateAttendance(loggedInUsers[0], connection);
                 } catch (err) {
                     // TODO: Check if code is invalid (idk how, but it's probably possible) and return a more helpful error to the code submitter
                     await handleAttendanceUpdateError(loggedInUsers[0], err);
@@ -127,7 +127,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
 
                 const updates: Promise<void>[] = loggedInUsers.slice(1).map(async (user) => {
                     try {
-                        await updateAttendance(user);
+                        await updateAttendance(user, connection);
                     } catch (err) {
                         await handleAttendanceUpdateError(user, err);
                     }

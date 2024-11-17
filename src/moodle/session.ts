@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import qs from "qs";
 import { CookieJar } from "tough-cookie";
 import Bot from "../bot";
+import { moodleConnection } from "../db/schema";
 
 const LOGIN_TOKEN_MATCH_REGEX = /<input type="hidden" name="logintoken" value="([^"]*)">/i;
 const LOGIN_ERROR_MATCH_REGEX = /<a href="#" id="loginerrormessage" class="sr-only">([^"]*)<\/a>/i;
@@ -12,13 +13,15 @@ export default class MoodleSession {
     private bot: Bot;
     private client: AxiosInstance;
     private cookies = new CookieJar();
+    private connection: typeof moodleConnection.$inferSelect;
 
-    constructor(bot: Bot) {
+    constructor(bot: Bot, connection: typeof moodleConnection.$inferSelect) {
         this.bot = bot;
+        this.connection = connection;
         this.client = axios.create({
             maxRedirects: 0,
             headers: {
-                Host: new URL(this.bot.moodleUrlBase).host,
+                Host: new URL(connection.moodleUrlBase).host,
             },
         });
 
@@ -70,7 +73,7 @@ export default class MoodleSession {
     }
 
     async login(username: string, password: string) {
-        const loginUrl = this.bot.moodleUrlBase + "/login/index.php";
+        const loginUrl = this.connection.moodleUrlBase + "/login/index.php";
 
         try {
             const loginTokenRes = await this.client.get(loginUrl);
@@ -85,7 +88,7 @@ export default class MoodleSession {
                 },
             });
 
-            if (!loginRes || loginRes.config.url !== this.bot.moodleUrlBase + "/") {
+            if (!loginRes || loginRes.config.url !== this.connection.moodleUrlBase + "/") {
                 const loginErrorMatch = LOGIN_ERROR_MATCH_REGEX.exec(loginRes?.data ?? "");
                 if (loginErrorMatch != null && loginErrorMatch?.length > 1) {
                     throw new LoginError("Login failed", loginErrorMatch[1]);
@@ -102,7 +105,7 @@ export default class MoodleSession {
     }
 
     async updateAttendance(qrPass: string, sessId: string) {
-        const attendanceUrl = this.bot.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=" + qrPass + "&sessid=" + sessId;
+        const attendanceUrl = this.connection.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=" + qrPass + "&sessid=" + sessId;
 
         try {
             await this.client.get(attendanceUrl);

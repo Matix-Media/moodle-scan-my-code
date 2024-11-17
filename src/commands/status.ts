@@ -29,7 +29,7 @@ const statusCommand: ObjectCommand = {
         const existingUser = await bot.db
             .select()
             .from(moodleUser)
-            .leftJoin(moodleConnection, eq(moodleUser.connectionId, moodleConnection.id))
+            .innerJoin(moodleConnection, eq(moodleUser.connectionId, moodleConnection.id))
             .where(and(eq(moodleUser.discordId, interaction.user.id), eq(moodleConnection.channelId, interaction.channelId)))
             .limit(1);
         if (existingUser.length === 0) {
@@ -54,7 +54,7 @@ const statusCommand: ObjectCommand = {
         });
 
         try {
-            const session = new MoodleSession(bot);
+            const session = new MoodleSession(bot, existingUser[0].connections);
             await session.login(existingUser[0].users.username, existingUser[0].users.password);
             await interaction.editReply({
                 embeds: [
