@@ -110,6 +110,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                 try {
                     await updateAttendance(loggedInUsers[0]);
                 } catch (err) {
+                    // TODO: Check if code is invalid (idk how, but it's probably possible) and return a more helpful error to the code submitter
                     await handleAttendanceUpdateError(loggedInUsers[0], err);
                 }
 
