@@ -11,9 +11,7 @@ export const moodleUser = pgTable(
             .references(() => moodleConnection.id)
             .notNull(),
     },
-    (table) => ({
-        unq: unique().on(table.connectionId, table.discordId),
-    }),
+    (table) => [unique().on(table.connectionId, table.discordId)],
 );
 
 export const moodleConnection = pgTable("connections", {
