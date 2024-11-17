@@ -32,9 +32,9 @@ const statusCommand: ObjectCommand = {
                 new EmbedBuilder()
                     .setColor(0xf48d2b)
                     .setDescription(
-                        "Anmeldedaten bereits hinterlegt 🎉\nAktuelle Anmeldename: `" +
+                        "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
                             existingUser[0].username +
-                            "`\n\n[-] Überprüfe Anmeldedaten...",
+                            "`\n\n[➗] Überprüfe Anmeldedaten...",
                     ),
             ],
             ephemeral: true,
@@ -48,9 +48,9 @@ const statusCommand: ObjectCommand = {
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
-                            "Anmeldedaten bereits hinterlegt 🎉\nAktuelle Anmeldename: `" +
+                            "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
                                 existingUser[0].username +
-                                "`\n\n[✓] Anmeldung erfolgreich 🎉",
+                                "`\n\n[✅] Anmeldung erfolgreich 🎉",
                         ),
                 ],
             });
@@ -60,9 +60,9 @@ const statusCommand: ObjectCommand = {
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
-                            "Anmeldedaten bereits hinterlegt 🎉\nAktuelle Anmeldename: `" +
+                            "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
                                 existingUser[0].username +
-                                "`\n\n[X] Anmeldung fehlgeschlagen ☹️\nBitte überprüfe deine Anmeldedaten.",
+                                "`\n\n[❌] Anmeldung fehlgeschlagen ☹️\nBitte überprüfe deine Anmeldedaten.",
                         ),
                 ],
             });

@@ -23,7 +23,7 @@ const loginCommand: ObjectCommand = {
         }
 
         await interaction.reply({
-            embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("`[-]` Teste Anmeldedaten...\n`[ ]` Anmeldedaten speichern")],
+            embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("`[➗]` Teste Anmeldedaten...\n`[ ]` Anmeldedaten speichern")],
             ephemeral: true,
         });
 
@@ -33,13 +33,17 @@ const loginCommand: ObjectCommand = {
         } catch (err) {
             console.error(err);
             interaction.editReply({
-                embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Anmeldung fehlgeschlagen ☹️\nBitte überprüfe deine Anmeldedaten.")],
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(0xf48d2b)
+                        .setDescription("[❌]Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.\n~~[ ] Anmeldedaten speichern~~"),
+                ],
             });
             return;
         }
 
         await interaction.editReply({
-            embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("`[✓]` Anmeldung erfolgreich 🎉\n`[-]` Speichere Anmeldedaten...")],
+            embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("`[✅]` Anmeldung erfolgreich 🎉\n`[➗]` Speichere Anmeldedaten...")],
         });
 
         const existingUser = await bot.db
@@ -64,7 +68,7 @@ const loginCommand: ObjectCommand = {
                 new EmbedBuilder()
                     .setColor(0xf48d2b)
                     .setDescription(
-                        "`[✓]` Anmeldung erfolgreich 🎉\n`[✓]` Speichern der Anmeldedaten erfolgreich 🎉" +
+                        "`[✅]` Anmeldung erfolgreich 🎉\n`[✅]` Speichern der Anmeldedaten erfolgreich 🎉" +
                             (userOverridden ? " (Vorherige Anmeldedaten wurden überschrieben)" : ""),
                     ),
             ],
