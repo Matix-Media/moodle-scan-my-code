@@ -83,7 +83,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                             embeds: [
                                 new EmbedBuilder()
                                     .setColor(0xf48d2b)
-                                    .setDescription("Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n" + err.reason),
+                                    .setDescription("Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nMoodle-Fehlermeldung: " + err.reason),
                             ],
                         });
                     } else if (err instanceof LoginError) {
@@ -92,7 +92,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                                 new EmbedBuilder()
                                     .setColor(0xf48d2b)
                                     .setDescription(
-                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\nDie Anmeldung zu deinem Account ist fehlgeschlagen" +
+                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nDie Anmeldung zu deinem Account ist fehlgeschlagen" +
                                             (err.reason ? ": " + err.reason : "."),
                                     ),
                             ],
@@ -103,7 +103,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                                 new EmbedBuilder()
                                     .setColor(0xf48d2b)
                                     .setDescription(
-                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\nBei dem letzten Versuch, deine Anwesenheit automatisch zu erfassen, ist ein Fehler aufgetreten. Bitte überprüfe deine angegebenen Anmeldedaten.",
+                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nBei dem letzten Versuch, deine Anwesenheit automatisch zu erfassen, ist ein Fehler aufgetreten. Bitte überprüfe deine angegebenen Anmeldedaten.",
                                     ),
                             ],
                         });
