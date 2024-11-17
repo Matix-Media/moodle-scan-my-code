@@ -1,0 +1,2 @@
+ALTER TABLE "connections" ADD CONSTRAINT "connections_channelId_unique" UNIQUE("channelId");--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_connectionId_discordId_unique" UNIQUE("connectionId","discordId");
