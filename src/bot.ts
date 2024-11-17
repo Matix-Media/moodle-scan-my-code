@@ -26,7 +26,6 @@ export default class Bot {
     public client: Client;
     public rest: REST;
     public applicationId: string;
-    public guildId: string;
     public codeChannelIds: string[];
     public moodleUrlBase: string;
 
@@ -37,25 +36,25 @@ export default class Bot {
             throw new Error("DISCORD_TOKEN is not defined");
         }
         this.token = token;
+
         const codeChannelIds = process.env.SCOPED_CHANNEL_IDS;
         if (codeChannelIds === undefined) {
             throw new Error("SCOPED_CHANNEL_IDS is not defined");
         }
         this.codeChannelIds = codeChannelIds.split(",").map((id) => id.trim());
+
         const moodleUrlBase = process.env.MOODLE_URL_BASE;
         if (moodleUrlBase === undefined) {
             throw new Error("MOODLE_URL_BASE is not defined");
         }
         this.moodleUrlBase = moodleUrlBase;
+
         const applicationId = process.env.APPLICATION_ID;
         if (applicationId === undefined) {
             throw new Error("APPLICATION_ID is not defined");
         }
         this.applicationId = applicationId;
-        const guildId = process.env.GUILD_ID;
-        if (guildId === undefined) {
-            throw new Error("GUILD_ID is not defined");
-        }
+
         const databaseUrl = process.env.DATABASE_URL;
         if (databaseUrl === undefined) {
             throw new Error("DATABASE_URL is not defined");
