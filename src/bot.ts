@@ -23,7 +23,7 @@ export default class Bot {
     private token: string;
     private events = [messageEvent];
     private commands = [setupCommand, loginCommand, logoutCommand, statusCommand, teardownCommand];
-    private connectedChannels: string[];
+    private connectedChannels: string[] = [];
 
     public readonly db: ReturnType<typeof drizzle>;
     public readonly client: Client;
