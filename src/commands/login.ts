@@ -37,11 +37,7 @@ const loginCommand: ObjectCommand = {
                     embeds: [
                         new EmbedBuilder()
                             .setColor(0xf48d2b)
-                            .setDescription(
-                                `⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten${
-                                    err.reason ? ": " + err.reason : "."
-                                }\n~~🔷 Anmeldedaten speichern~~`,
-                            ),
+                            .setDescription(`⛔ Anmeldung fehlgeschlagen ☹️${err.reason ? " " + err.reason : "."}\n~~🔺 Anmeldedaten speichern~~`),
                     ],
                 });
             } else {
@@ -49,7 +45,7 @@ const loginCommand: ObjectCommand = {
                     embeds: [
                         new EmbedBuilder()
                             .setColor(0xf48d2b)
-                            .setDescription("⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.\n~~🔷 Anmeldedaten speichern~~"),
+                            .setDescription("⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.\n~~🔺 Anmeldedaten speichern~~"),
                     ],
                 });
             }

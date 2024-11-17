@@ -92,10 +92,10 @@ export default class MoodleSession {
                 } else throw new LoginError("Login failed");
             }
         } catch (err) {
+            if (err instanceof LoginError) throw err;
             if (axios.isAxiosError(err) && err.response) {
                 const loginErrorMatch = LOGIN_ERROR_MATCH_REGEX.exec(err.response.data ?? "");
-                if (loginErrorMatch != null && loginErrorMatch?.length > 1) 
-                    throw new LoginError("Login failed", loginErrorMatch[1]);
+                if (loginErrorMatch != null && loginErrorMatch?.length > 1) throw new LoginError("Login failed", loginErrorMatch[1]);
                 else throw new LoginError("Login failed", err.message);
             } else throw new LoginError("Login failed", String(err));
         }
