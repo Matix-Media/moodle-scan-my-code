@@ -50,7 +50,7 @@ const statusCommand: ObjectCommand = {
                         .setDescription(
                             "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
                                 existingUser[0].username +
-                                "`\n\n✅ Anmeldung erfolgreich 🎉",
+                                "`\n\n✅ Anmeldedaten erfolgreich überprüft 🎉",
                         ),
                 ],
             });
