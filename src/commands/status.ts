@@ -7,7 +7,7 @@ import MoodleSession from "../moodle/session";
 const statusCommand: ObjectCommand = {
     data: new SlashCommandBuilder()
         .setName("status")
-        .setDescription("Status der eingerichteten Moodle Verbindung überprüfen")
+        .setDescription("Status der eingerichteten Anwesenheitserfassung überprüfen")
         .setContexts(InteractionContextType.Guild),
     execute: async (bot, interaction) => {
         if (interaction.guildId === null) {
@@ -39,7 +39,7 @@ const statusCommand: ObjectCommand = {
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
-                            `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nDu hast keine Anmeldedaten gespeichert ☹️`,
+                            `Es ist eine Anwesenheitserfassung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nDu hast keine Anmeldedaten gespeichert ☹️`,
                         ),
                 ],
                 ephemeral: true,
@@ -52,7 +52,7 @@ const statusCommand: ObjectCommand = {
                 new EmbedBuilder()
                     .setColor(0xf48d2b)
                     .setDescription(
-                        `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\n` +
+                        `Es ist eine Anwesenheitserfassung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\n` +
                             `Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`${existingUser[0].username}\`\n\n🔄 Überprüfe Anmeldedaten...`,
                     ),
             ],
@@ -67,7 +67,7 @@ const statusCommand: ObjectCommand = {
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
-                            `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nAnmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`` +
+                            `Es ist eine Anwesenheitserfassung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nAnmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`` +
                                 existingUser[0].username +
                                 "`\n\n✅ Anmeldedaten erfolgreich überprüft 🎉",
                         ),
@@ -79,7 +79,7 @@ const statusCommand: ObjectCommand = {
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
-                            `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nAnmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`` +
+                            `Es ist eine Anwesenheitserfassung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nAnmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`` +
                                 existingUser[0].username +
                                 "`\n\n⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.",
                         ),
