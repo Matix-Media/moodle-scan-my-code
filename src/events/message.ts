@@ -6,7 +6,7 @@ import fetch from "node-fetch";
 import QRCodeReader from "qrcode-reader";
 import { ObjectEvent } from "../bot.ts";
 import { users } from "../db/schema.ts";
-import MoodleSession, { AttendanceUpdateError } from "../moodle/session.ts";
+import MoodleSession, { AttendanceUpdateError, LoginError } from "../moodle/session.ts";
 
 const messageEvent: ObjectEvent<Events.MessageCreate> = {
     name: Events.MessageCreate,
@@ -75,7 +75,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
             if (loggedInUsers.length > 0) {
                 console.log(`Updating attendance for logged in users (${loggedInUsers.length} total)...`);
 
-                const handleAttendanceUpdateError = async (user: typeof users.$inferSelect, err: AttendanceUpdateError) => {
+                const handleAttendanceUpdateError = async (user: typeof users.$inferSelect, err: any) => {
                     console.error("Error updating attendance for " + user.discordId + ":", err);
                     const dms = await bot.client.users.createDM(user.discordId);
                     if (err instanceof AttendanceUpdateError) {
@@ -84,6 +84,17 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                                 new EmbedBuilder()
                                     .setColor(0xf48d2b)
                                     .setDescription("Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n" + err.reason),
+                            ],
+                        });
+                    } else if (err instanceof LoginError) {
+                        dms.send({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setColor(0xf48d2b)
+                                    .setDescription(
+                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\nDie Anmeldung zu deinem Account ist fehlgeschlagen" +
+                                            (err.reason ? ": " + err.reason : "."),
+                                    ),
                             ],
                         });
                     } else {

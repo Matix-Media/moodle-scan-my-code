@@ -88,8 +88,8 @@ export default class MoodleSession {
         if (!res || res.config.url !== this.bot.moodleUrlBase + "/") {
             const loginErrorMatch = LOGIN_ERROR_MATCH_REGEX.exec(res?.data ?? "");
             if (loginErrorMatch != null && loginErrorMatch?.length > 1) {
-                throw new Error("Login failed: " + loginErrorMatch[1]);
-            } else throw new Error("Login failed");
+                throw new LoginError("Login failed", loginErrorMatch[1]);
+            } else throw new LoginError("Login failed");
         }
     }
 
@@ -113,6 +113,15 @@ export class AttendanceUpdateError extends Error {
     constructor(message: string, reason: string) {
         super(message);
         this.name = "AttendanceUpdateError";
+        this.reason = reason;
+    }
+}
+
+export class LoginError extends Error {
+    public reason: string | undefined;
+    constructor(message: string, reason?: string) {
+        super(message);
+        this.name = "LoginError";
         this.reason = reason;
     }
 }
