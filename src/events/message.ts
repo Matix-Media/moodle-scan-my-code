@@ -65,7 +65,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                     "QR-Code gefunden 🎉\n\nUm deine Anwesenheit automatisch zu erfassen, nutze den `/login` Befehl, um deine Anmeldedaten zu hinterlegen.",
                 )
                 .setURL(qrRes);
-            await message.reply({ embeds: [embed], content: "<@here>" });
+            await message.reply({ embeds: [embed], content: "@here" });
 
             const loggedInUsers = await bot.db.select().from(moodleUser).where(eq(moodleUser.connectionId, connection.id));
 
