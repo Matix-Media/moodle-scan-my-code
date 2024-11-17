@@ -40,7 +40,10 @@ const loginCommand: ObjectCommand = {
             embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("`[✓]` Anmeldung erfolgreich 🎉\n`[-]` Speichere Anmeldedaten...")],
         });
 
-        const existingUser = await bot.db.select().from(users).where(eq(users.discordId, interaction.user.id));
+        const existingUser = await bot.db
+            .select()
+            .from(users)
+            .where(and(eq(users.discordId, interaction.user.id), eq(users.guildId, interaction.guildId)));
         let userOverridden = false;
         if (existingUser.length > 0) {
             userOverridden = true;
