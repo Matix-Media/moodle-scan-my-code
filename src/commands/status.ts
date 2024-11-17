@@ -7,7 +7,7 @@ import MoodleSession from "../moodle/session";
 const statusCommand: ObjectCommand = {
     data: new SlashCommandBuilder()
         .setName("status")
-        .setDescription("Status der Moodle Anmeldedaten überprüfen")
+        .setDescription("Status der eingerichteten Moodle Verbindung überprüfen")
         .setContexts(InteractionContextType.Guild),
     execute: async (bot, interaction) => {
         if (interaction.guildId === null) {
@@ -26,15 +26,22 @@ const statusCommand: ObjectCommand = {
             return;
         }
 
+        const connection = (await bot.db.select().from(moodleConnection).where(eq(moodleConnection.channelId, interaction.channelId)).limit(1))[0];
+
         const existingUser = await bot.db
             .select()
             .from(moodleUser)
-            .innerJoin(moodleConnection, eq(moodleUser.connectionId, moodleConnection.id))
-            .where(and(eq(moodleUser.discordId, interaction.user.id), eq(moodleConnection.channelId, interaction.channelId)))
+            .where(and(eq(moodleUser.discordId, interaction.user.id), eq(moodleUser.connectionId, connection.id)))
             .limit(1);
         if (existingUser.length === 0) {
             await interaction.reply({
-                embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Du hast keine Anmeldedaten gespeichert ☹️")],
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(0xf48d2b)
+                        .setDescription(
+                            `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nDu hast keine Anmeldedaten gespeichert ☹️`,
+                        ),
+                ],
                 ephemeral: true,
             });
             return;
@@ -45,24 +52,23 @@ const statusCommand: ObjectCommand = {
                 new EmbedBuilder()
                     .setColor(0xf48d2b)
                     .setDescription(
-                        "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
-                            existingUser[0].users.username +
-                            "`\n\n🔄 Überprüfe Anmeldedaten...",
+                        `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\n` +
+                            `Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`${existingUser[0].username}\`\n\n🔄 Überprüfe Anmeldedaten...`,
                     ),
             ],
             ephemeral: true,
         });
 
         try {
-            const session = new MoodleSession(bot, existingUser[0].connections);
-            await session.login(existingUser[0].users.username, existingUser[0].users.password);
+            const session = new MoodleSession(bot, connection);
+            await session.login(existingUser[0].username, existingUser[0].password);
             await interaction.editReply({
                 embeds: [
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
-                            "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
-                                existingUser[0].users.username +
+                            `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nAnmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`` +
+                                existingUser[0].username +
                                 "`\n\n✅ Anmeldedaten erfolgreich überprüft 🎉",
                         ),
                 ],
@@ -73,8 +79,8 @@ const statusCommand: ObjectCommand = {
                     new EmbedBuilder()
                         .setColor(0xf48d2b)
                         .setDescription(
-                            "Anmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: `" +
-                                existingUser[0].users.username +
+                            `Es ist eine Moodle Verbindung für diesen Channel eingerichtet ✔️\nMoodle-URL: ${connection.moodleUrlBase}\n\nAnmeldedaten bereits hinterlegt ✔️\nAktuelle Anmeldename: \`` +
+                                existingUser[0].username +
                                 "`\n\n⛔ Anmeldung fehlgeschlagen ☹️ Bitte überprüfe deine Anmeldedaten.",
                         ),
                 ],
