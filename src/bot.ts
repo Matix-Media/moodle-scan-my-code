@@ -16,12 +16,13 @@ import loginCommand from "./commands/login.ts";
 import logoutCommand from "./commands/logout.ts";
 import setupCommand from "./commands/setup.ts";
 import statusCommand from "./commands/status.ts";
+import teardownCommand from "./commands/teardown.ts";
 import messageEvent from "./events/message.ts";
 
 export default class Bot {
     private token: string;
     private events = [messageEvent];
-    private commands = [setupCommand, loginCommand, logoutCommand, statusCommand];
+    private commands = [setupCommand, loginCommand, logoutCommand, statusCommand, teardownCommand];
     private connectedChannels: string[];
 
     public readonly db: ReturnType<typeof drizzle>;
