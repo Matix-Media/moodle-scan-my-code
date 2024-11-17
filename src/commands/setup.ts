@@ -7,7 +7,7 @@ const setupCommand: ObjectCommand = {
         .setName("setup")
         .setDescription("Richte die Anwesenheitserfassung für diesen Channel ein")
         .addStringOption((option) =>
-            option.setName("moodleBaseUrl").setDescription("Die URL deiner Moodle Instanz, z.B: https://moodle.example.com/").setRequired(true),
+            option.setName("moodle").setDescription("Die URL deiner Moodle Instanz, z.B: https://moodle.example.com/").setRequired(true),
         )
         .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
@@ -20,7 +20,7 @@ const setupCommand: ObjectCommand = {
             return;
         }
 
-        const moodleBaseUrl = interaction.options.getString("moodleBaseUrl", true).replace(/\/$/, "");
+        const moodleBaseUrl = interaction.options.getString("moodle", true).replace(/\/$/, "");
 
         await bot.db
             .insert(moodleConnection)
