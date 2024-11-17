@@ -1,3 +1,3 @@
 
 [phases.build]
-cms = ['...', 'pnpm run migrate']
+cmds = ['...', 'pnpm run migrate']
