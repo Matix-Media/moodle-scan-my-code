@@ -10,6 +10,7 @@ const statusCommand: ObjectCommand = {
         if (interaction.guildId === null) {
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Du kannst diesen Befehl nur von einem Server aus nutzten ☹️")],
+                ephemeral: true,
             });
             return;
         }
@@ -21,6 +22,7 @@ const statusCommand: ObjectCommand = {
         if (existingUser.length === 0) {
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Du hast keine Anmeldedaten gespeichert ☹️")],
+                ephemeral: true,
             });
             return;
         }
@@ -35,6 +37,7 @@ const statusCommand: ObjectCommand = {
                             "\n\n[-] Überprüfe Anmeldedaten...",
                     ),
             ],
+            ephemeral: true,
         });
 
         try {

@@ -9,6 +9,7 @@ const logoutCommand: ObjectCommand = {
         if (interaction.guildId === null) {
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Du kannst diesen Befehl nur von einem Server aus nutzten ☹️")],
+                ephemeral: true,
             });
             return;
         }
@@ -20,6 +21,7 @@ const logoutCommand: ObjectCommand = {
         if (existingUser.length === 0) {
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Du hast keine Anmeldedaten gespeichert ☹️")],
+                ephemeral: true,
             });
             return;
         }
@@ -28,6 +30,7 @@ const logoutCommand: ObjectCommand = {
 
         await interaction.reply({
             embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Anmeldedaten erfolgreich gelöscht 🎉")],
+            ephemeral: true,
         });
     },
 };

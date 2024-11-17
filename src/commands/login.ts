@@ -17,12 +17,14 @@ const loginCommand: ObjectCommand = {
         if (interaction.guildId === null) {
             await interaction.reply({
                 embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("Du kannst diesen Befehl nur von einem Server aus nutzten ☹️")],
+                ephemeral: true,
             });
             return;
         }
 
         await interaction.reply({
             embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("`[-]` Teste Anmeldedaten...\n`[ ]` Anmeldedaten speichern")],
+            ephemeral: true,
         });
 
         try {
