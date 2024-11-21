@@ -7,7 +7,7 @@ nodejs = "node18"
 
 
 [phases.install]
-cmds = ['...', 'pip install -r requirements.txt']
+cmds = ['...', 'pip3 install -r requirements.txt']
 aptPkgs = ['...', "libzbar0"]
 
 [phases.build]

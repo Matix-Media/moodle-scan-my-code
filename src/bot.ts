@@ -125,7 +125,7 @@ export default class Bot {
         return new Promise<string[]>((resolve, reject) => {
             const errors: string[] = [];
             const results: string[] = [];
-            const process = childProcess.spawn("python", ["./qr-code-reader/reader.py", url]);
+            const process = childProcess.spawn("python3", ["./qr-code-reader/reader.py", url]);
             process.stdout.on("data", (data) => {
                 console.log(data.toString());
                 if (data.toString().startsWith("RES: ")) {
