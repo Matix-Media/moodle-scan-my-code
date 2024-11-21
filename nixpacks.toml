@@ -2,10 +2,7 @@
 providers = ['...', 'python']
 
 [variables]
-LD_LIBRARY_PATH = [
-    '...',
-    '/nix/store/vjassx9f9vdr6wl3cpsm27vpqzjjylsr-zbar-0.23.92-lib/lib/libzbar.so.0',
-]
+LD_LIBRARY_PATH = '/nix/store/vjassx9f9vdr6wl3cpsm27vpqzjjylsr-zbar-0.23.92-lib/lib/libzbar.so.0'
 
 [phases.python-install]
 dependsOn = ['python:setup', 'install']
