@@ -4,6 +4,7 @@ import {
     ChatInputCommandInteraction,
     Client,
     ClientEvents,
+    EmbedBuilder,
     Events,
     GatewayIntentBits,
     REST,
@@ -144,6 +145,10 @@ export default class Bot {
                 }
             });
         });
+    }
+
+    public brandedEmbed() {
+        return new EmbedBuilder().setColor(0xf48d2b).setFooter({text: "Moodle Scan My Code"});
     }
 }
 

@@ -1,9 +1,6 @@
 import axios from "axios";
 import { EmbedBuilder, Events } from "discord.js";
 import { eq } from "drizzle-orm";
-import { Jimp } from "jimp";
-import fetch from "node-fetch";
-import QRCodeReader from "qrcode-reader";
 import { ObjectEvent } from "../bot.ts";
 import { moodleConnection, moodleUser } from "../db/schema.ts";
 import MoodleSession, { AttendanceUpdateError, LoginError } from "../moodle/session.ts";
@@ -32,10 +29,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
 
             if (validQRCode === undefined) {
                 console.log("No valid QR code found");
-                const embed = new EmbedBuilder()
-                    .setColor(0xf48d2b)
-                    .setDescription("Keinen gültigen QR-Code gefunden ☹️")
-                    .setThumbnail(attachment.url);
+                const embed = bot.brandedEmbed().setDescription("Keinen gültigen QR-Code gefunden ☹️").setThumbnail(attachment.url);
                 await message.reply({ embeds: [embed] });
                 return;
             }
@@ -43,23 +37,20 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
             const qrPass = new URL(validQRCode).searchParams.get("qrpass");
             if (qrPass === null) {
                 console.log("QR code does not contain a valid QR pass");
-                const embed = new EmbedBuilder().setColor(0xf48d2b).setDescription("QR-Code enthält keinen QR Pass ☹️").setThumbnail(attachment.url);
+                const embed = bot.brandedEmbed().setDescription("QR-Code enthält keinen QR Pass ☹️").setThumbnail(attachment.url);
                 await message.reply({ embeds: [embed] });
                 return;
             }
             const sessId = new URL(validQRCode).searchParams.get("sessid");
             if (sessId === null) {
                 console.log("QR code does not contain a valid session ID");
-                const embed = new EmbedBuilder()
-                    .setColor(0xf48d2b)
-                    .setDescription("QR-Code enthält keine Session ID ☹️")
-                    .setThumbnail(attachment.url);
+                const embed = bot.brandedEmbed().setDescription("QR-Code enthält keine Session ID ☹️").setThumbnail(attachment.url);
                 await message.reply({ embeds: [embed] });
                 return;
             }
 
-            const embed = new EmbedBuilder()
-                .setColor(0xf48d2b)
+            const embed = bot
+                .brandedEmbed()
                 .setTitle("Hier klicken, um Anwesenheit zu erfassen")
                 .setDescription(
                     "QR-Code gefunden 🎉\n\nUm deine Anwesenheit automatisch zu erfassen, nutze den `/login` Befehl, um deine Anmeldedaten zu hinterlegen.",
@@ -78,8 +69,8 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                     if (err instanceof AttendanceUpdateError) {
                         dms.send({
                             embeds: [
-                                new EmbedBuilder()
-                                    .setColor(0xf48d2b)
+                                bot
+                                    .brandedEmbed()
                                     .setDescription(
                                         "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nKonnte die Anwesenheit nicht erfassen" +
                                             (err.reason ? ": " + err.reason : "."),
@@ -89,8 +80,8 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                     } else if (err instanceof LoginError) {
                         dms.send({
                             embeds: [
-                                new EmbedBuilder()
-                                    .setColor(0xf48d2b)
+                                bot
+                                    .brandedEmbed()
                                     .setDescription(
                                         "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nDie Anmeldung zu deinem Account ist fehlgeschlagen" +
                                             (err.reason ? ": " + err.reason : "."),
@@ -100,8 +91,8 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                     } else {
                         dms.send({
                             embeds: [
-                                new EmbedBuilder()
-                                    .setColor(0xf48d2b)
+                                bot
+                                    .brandedEmbed()
                                     .setDescription(
                                         "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nBei dem letzten Versuch, deine Anwesenheit automatisch zu erfassen, ist ein unbekannter Fehler aufgetreten. Bitte überprüfe deine angegebenen Anmeldedaten.",
                                     ),
@@ -147,33 +138,5 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
         }
     },
 };
-
-async function downloadImage(url: string): Promise<ArrayBuffer> {
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch image from URL: ${response.statusText}`);
-    }
-    const buffer = await response.arrayBuffer();
-    return buffer;
-}
-
-async function decodeQRCode(buffer: ArrayBuffer): Promise<string> {
-    return new Promise(async (resolve, reject) => {
-        let image: Awaited<ReturnType<typeof Jimp.read>>;
-        try {
-            image = await Jimp.read(buffer);
-        } catch (err) {
-            return reject(err);
-        }
-        const qr = new QRCodeReader();
-        qr.callback = (error: Error | null, value: { result: string }) => {
-            if (error) {
-                return reject(error);
-            }
-            resolve(value.result);
-        };
-        qr.decode(image.bitmap);
-    });
-}
 
 export default messageEvent;

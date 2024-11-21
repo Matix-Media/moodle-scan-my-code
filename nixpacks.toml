@@ -2,7 +2,7 @@
 providers = ['...', 'python']
 
 [phases.python-install]
-dependsOn = ['python:setup']
+dependsOn = ['python:setup', 'install']
 cacheDirectories = ['...', '/root/.cache/pip']
 paths = ['...', '/opt/venv/bin']
 cmds = [
@@ -11,7 +11,7 @@ cmds = [
 ]
 
 [phases.install]
-aptPkgs = ['...', "libzbar0"]
+aptPkgs = ['...', 'libzbar0', 'libzbar-dev']
 
 [phases.build]
 cmds = ['...', 'pnpm run migrate']
