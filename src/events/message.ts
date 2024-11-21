@@ -24,30 +24,30 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
         try {
             console.log("Processing QR code...");
 
-            console.log("Downloading attachment");
-            const imageRes = await downloadImage(attachment.url);
+            const qrRes = await bot.readQrCode(attachment.url);
 
-            console.log("Decoding QR code");
-            const qrRes = await decodeQRCode(imageRes);
+            console.log("QR codes:", qrRes);
 
-            if (!qrRes.startsWith(connection.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=")) {
-                console.log("QR code does not start with expected URL");
+            const validQRCode = qrRes.find((qr) => qr.startsWith(connection.moodleUrlBase + "/mod/attendance/attendance.php?qrpass="));
+
+            if (validQRCode === undefined) {
+                console.log("No valid QR code found");
                 const embed = new EmbedBuilder()
                     .setColor(0xf48d2b)
-                    .setDescription("QR-Code enthält keine gültige URL ☹️")
+                    .setDescription("Keinen gültigen QR-Code gefunden ☹️")
                     .setThumbnail(attachment.url);
                 await message.reply({ embeds: [embed] });
                 return;
             }
 
-            const qrPass = new URL(qrRes).searchParams.get("qrpass");
+            const qrPass = new URL(validQRCode).searchParams.get("qrpass");
             if (qrPass === null) {
                 console.log("QR code does not contain a valid QR pass");
                 const embed = new EmbedBuilder().setColor(0xf48d2b).setDescription("QR-Code enthält keinen QR Pass ☹️").setThumbnail(attachment.url);
                 await message.reply({ embeds: [embed] });
                 return;
             }
-            const sessId = new URL(qrRes).searchParams.get("sessid");
+            const sessId = new URL(validQRCode).searchParams.get("sessid");
             if (sessId === null) {
                 console.log("QR code does not contain a valid session ID");
                 const embed = new EmbedBuilder()
@@ -64,7 +64,7 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                 .setDescription(
                     "QR-Code gefunden 🎉\n\nUm deine Anwesenheit automatisch zu erfassen, nutze den `/login` Befehl, um deine Anmeldedaten zu hinterlegen.",
                 )
-                .setURL(qrRes);
+                .setURL(validQRCode);
             await message.reply({ embeds: [embed], content: "@here" });
 
             const loggedInUsers = await bot.db.select().from(moodleUser).where(eq(moodleUser.connectionId, connection.id));

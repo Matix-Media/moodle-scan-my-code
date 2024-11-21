@@ -1,3 +1,4 @@
+import childProcess from "child_process";
 import {
     CacheType,
     ChatInputCommandInteraction,
@@ -118,6 +119,31 @@ export default class Bot {
 
     public isChannelConnected(channelId: string) {
         return this.connectedChannels.includes(channelId);
+    }
+
+    public async readQrCode(url: string) {
+        return new Promise<string[]>((resolve, reject) => {
+            const errors: string[] = [];
+            const results: string[] = [];
+            const process = childProcess.spawn("python", ["./qr-code-reader/reader.py", url]);
+            process.stdout.on("data", (data) => {
+                console.log(data.toString());
+                if (data.toString().startsWith("RES: ")) {
+                    results.push(data.toString().substring(5));
+                }
+            });
+            process.stderr.on("data", (data) => {
+                errors.push(data.toString());
+                console.error(data.toString());
+            });
+            process.on("close", (code) => {
+                if (code === 0) {
+                    resolve(results);
+                } else {
+                    reject(errors.join("\n"));
+                }
+            });
+        });
     }
 }
 
