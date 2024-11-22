@@ -1,9 +1,6 @@
 
 providers = ['...', 'python']
 
-[variables]
-LD_LIBRARY_PATH = '/lib/x86_64-linux-gnu/libzbar.so.0'
-
 [phases.python-install]
 dependsOn = ['python:setup', 'install']
 cacheDirectories = ['...', '/root/.cache/pip']
