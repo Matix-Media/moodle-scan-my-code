@@ -11,7 +11,7 @@ cmds = [
 ]
 
 [phases.install]
-aptPkgs = ['...', 'libzbar0', 'libzbar-dev']
+# aptPkgs = ['...', 'libzbar0', 'libzbar-dev']
 nixPkgs = ['...', 'zbar']
 
 [phases.build]
