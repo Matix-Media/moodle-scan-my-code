@@ -12,7 +12,7 @@ cmds = [
 
 [phases.install]
 # aptPkgs = ['...', 'libzbar0', 'libzbar-dev']
-nixPkgs = ['...', 'zbar']
+nixPkgs = ['...', 'zbar', 'python311Packages.python-zbar']
 
 [phases.build]
 cmds = ['...', 'pnpm run migrate']
