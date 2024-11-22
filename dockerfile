@@ -7,7 +7,7 @@ RUN corepack enable
 COPY . /app
 WORKDIR /app
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 RUN apt-get update 
 RUN apt-get install python3-pip python3-venv libzbar0 -y
@@ -22,5 +22,4 @@ RUN pip install -Ur /app/qr-code-reader/requirements.txt
 
 RUN pnpm run migrate
 
-EXPOSE 8000
 CMD [ "pnpm", "start" ]
