@@ -23,12 +23,12 @@
         "pg": "^8.13.1",
         "qrcode-reader": "^1.0.4",
         "qs": "^6.13.0",
-        "tough-cookie": "^5.0.0"
+        "tough-cookie": "^5.0.0",
+        "drizzle-kit": "^0.28.1",
+        "tsx": "^4.19.2"
     },
     "devDependencies": {
         "@types/pg": "^8.11.10",
-        "@types/qs": "^6.9.17",
-        "drizzle-kit": "^0.28.1",
-        "tsx": "^4.19.2"
+        "@types/qs": "^6.9.17"
     }
 }
