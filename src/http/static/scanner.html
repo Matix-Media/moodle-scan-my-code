@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodle Scan My Code</title>
+</head>
+
+<body>
+    <video id="live-feed"></video>
+    <script type="module"
+        src="https://cdn.jsdelivr.net/npm/qr-scanner@1.2.0/qr-scanner-worker.min.js"></script>
+
+
+    <script type="module">
+        import QrScanner from 'https://cdn.jsdelivr.net/npm/qr-scanner@1.2.0/qr-scanner.min.js';
+
+        const params = new URLSearchParams(window.location.search);
+        if (!params.has("key")) {
+            alert("Es wurde kein Key übergeben. Bitte versuche den Link neu zu öffnen.");
+        } else {
+            const key = params.get("key");
+            const scanner = new QrScanner(document.getElementById('live-feed'), result => {
+                console.log(result);
+                console.log("Sending to server with key: " + key);
+                fetch("/submit", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        key: key,
+                        data: result
+                    })
+                }).then(response => {
+                    if (response.status === 200) {
+                        alert("QR-Code erfolgreich gescannt!");
+                    } else {
+                        alert("QR-Code konnte nicht gescannt werden (" + response.status + ").");
+                    }
+                })
+            });
+            scanner.start();
+        }
+    </script>
+</body>
+
+</html>

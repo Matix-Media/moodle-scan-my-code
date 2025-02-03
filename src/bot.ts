@@ -1,4 +1,6 @@
+import fastifyStatic from "@fastify/static";
 import childProcess from "child_process";
+import crypto from "crypto";
 import {
     CacheType,
     ChatInputCommandInteraction,
@@ -15,23 +17,29 @@ import {
     SlashCommandOptionsOnlyBuilder,
 } from "discord.js";
 import * as dotenv from "dotenv";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
+import fastify, { FastifyInstance } from "fastify";
+import path from "path";
 import loginCommand from "./commands/login.ts";
 import logoutCommand from "./commands/logout.ts";
+import scanCommand from "./commands/scan.ts";
 import setupCommand from "./commands/setup.ts";
 import statusCommand from "./commands/status.ts";
 import teardownCommand from "./commands/teardown.ts";
 import { moodleConnection, moodleUser } from "./db/schema.ts";
 import messageEvent from "./events/message.ts";
-import { eq } from "drizzle-orm";
-import message from "./events/message.ts";
+import router from "./http/router.ts";
 import MoodleSession, { AttendanceUpdateError, LoginError } from "./moodle/session.ts";
 
 export default class Bot {
-    private token: string;
+    private discordToken: string;
+    private botUrl: string;
     private events = [messageEvent];
-    private commands = [setupCommand, loginCommand, logoutCommand, statusCommand, teardownCommand];
+    private commands = [setupCommand, loginCommand, logoutCommand, statusCommand, teardownCommand, scanCommand];
     private connectedChannels: string[] = [];
+    private scanTokens: Record<string, ScanToken> = {};
+    private readonly http: FastifyInstance;
 
     public readonly db: ReturnType<typeof drizzle>;
     public readonly client: Client;
@@ -44,13 +52,19 @@ export default class Bot {
         if (token === undefined) {
             throw new Error("DISCORD_TOKEN is not defined");
         }
-        this.token = token;
+        this.discordToken = token;
 
         const applicationId = process.env.APPLICATION_ID;
         if (applicationId === undefined) {
             throw new Error("APPLICATION_ID is not defined");
         }
         this.applicationId = applicationId;
+
+        const botUrl = process.env.BOT_URL;
+        if (botUrl === undefined) {
+            throw new Error("BOT_URL is not defined");
+        }
+        this.botUrl = botUrl;
 
         const databaseUrl = process.env.DATABASE_URL;
         if (databaseUrl === undefined) {
@@ -86,7 +100,13 @@ export default class Bot {
             }
         });
 
-        this.rest = new REST({ version: "10" }).setToken(this.token);
+        this.rest = new REST({ version: "10" }).setToken(this.discordToken);
+
+        this.http = fastify();
+        const staticPath = path.join(__dirname, "./http/static");
+        console.log(staticPath);
+        this.http.register(fastifyStatic, { root: staticPath });
+        this.http.register(router);
     }
 
     public async start() {
@@ -97,7 +117,7 @@ export default class Bot {
 
         console.log("Starting bot...");
 
-        await this.client.login(this.token);
+        await this.client.login(this.discordToken);
 
         console.log("Registering events...");
         for (const event of this.events) {
@@ -111,6 +131,9 @@ export default class Bot {
             commandsJson.push(command.data.toJSON());
         }
         await this.rest.put(Routes.applicationCommands(this.applicationId), { body: commandsJson });
+
+        console.log("Starting HTTP server...");
+        await this.http.listen({ port: 3000 });
 
         console.log("Bot started");
     }
@@ -127,8 +150,31 @@ export default class Bot {
         return this.connectedChannels.includes(channelId);
     }
 
+    public createScanToken(connection: typeof moodleConnection.$inferSelect, createdBy: string) {
+        const token = crypto.randomBytes(16).toString("hex");
+        this.scanTokens[token] = { createdAt: new Date(), connection, createdBy };
+        return token;
+    }
+
+    public getScanToken(token: string) {
+        const scanToken = this.scanTokens[token];
+        if (scanToken === undefined) {
+            return undefined;
+        }
+        if (scanToken.createdAt.getTime() + 1000 * 60 * 5 < Date.now()) {
+            delete this.scanTokens[token];
+            return undefined;
+        }
+        return scanToken;
+    }
+
+    public generateScanTokenUrl(token: string) {
+        return `${this.botUrl}/scanner.html?key=${token}`;
+    }
+
     public async handleAttendanceReceived(
         url: string,
+
         originalMessage: OmitPartialGroupDMChannel<Message<boolean>>,
         connection: typeof moodleConnection.$inferSelect,
     ) {
@@ -168,33 +214,27 @@ export default class Bot {
                     if (err instanceof AttendanceUpdateError) {
                         dms.send({
                             embeds: [
-                                this
-                                    .brandedEmbed()
-                                    .setDescription(
-                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nKonnte die Anwesenheit nicht erfassen" +
-                                            (err.reason ? ": " + err.reason : "."),
-                                    ),
+                                this.brandedEmbed().setDescription(
+                                    "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nKonnte die Anwesenheit nicht erfassen" +
+                                        (err.reason ? ": " + err.reason : "."),
+                                ),
                             ],
                         });
                     } else if (err instanceof LoginError) {
                         dms.send({
                             embeds: [
-                                this
-                                    .brandedEmbed()
-                                    .setDescription(
-                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nDie Anmeldung zu deinem Account ist fehlgeschlagen" +
-                                            (err.reason ? ": " + err.reason : "."),
-                                    ),
+                                this.brandedEmbed().setDescription(
+                                    "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nDie Anmeldung zu deinem Account ist fehlgeschlagen" +
+                                        (err.reason ? ": " + err.reason : "."),
+                                ),
                             ],
                         });
                     } else {
                         dms.send({
                             embeds: [
-                                this
-                                    .brandedEmbed()
-                                    .setDescription(
-                                        "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nBei dem letzten Versuch, deine Anwesenheit automatisch zu erfassen, ist ein unbekannter Fehler aufgetreten. Bitte überprüfe deine angegebenen Anmeldedaten.",
-                                    ),
+                                this.brandedEmbed().setDescription(
+                                    "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nBei dem letzten Versuch, deine Anwesenheit automatisch zu erfassen, ist ein unbekannter Fehler aufgetreten. Bitte überprüfe deine angegebenen Anmeldedaten.",
+                                ),
                             ],
                         });
                     }
@@ -268,4 +308,10 @@ export interface ObjectEvent<T extends keyof ClientEvents> {
 export interface ObjectCommand {
     data: SlashCommandOptionsOnlyBuilder | SlashCommandBuilder;
     execute: (bot: Bot, interaction: ChatInputCommandInteraction<CacheType>) => void | Promise<void>;
+}
+
+export interface ScanToken {
+    createdAt: Date;
+    connection: typeof moodleConnection.$inferSelect;
+    createdBy: string;
 }
