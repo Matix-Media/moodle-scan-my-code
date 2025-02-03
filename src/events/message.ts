@@ -21,7 +21,25 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
 
         if (message.attachments.size != 1) {
             if (!message.content.startsWith(loginUrl)) return;
-            bot.handleAttendanceReceived(message.content, message, connection);
+            bot.handleAttendanceReceived(
+                message.content,
+                async (status) => {
+                    if (status == "invalid") {
+                        const embed = bot.brandedEmbed().setDescription("Ungültige Anwesenheitserfassungs-URL ☹️");
+                        await message.reply({ embeds: [embed] });
+                    } else if (status == "success") {
+                        const embed = bot
+                            .brandedEmbed()
+                            .setTitle("Hier klicken, um Anwesenheit zu erfassen")
+                            .setDescription(
+                                "QR-Code gefunden 🎉\n\nUm deine Anwesenheit automatisch zu erfassen, nutze den `/login` Befehl, um deine Anmeldedaten zu hinterlegen.",
+                            )
+                            .setURL(message.content);
+                        await message.reply({ embeds: [embed], content: "@here" });
+                    }
+                },
+                connection,
+            );
         } else {
             const attachment = message.attachments.first()!;
             if (!attachment.contentType?.startsWith("image/")) return;
@@ -38,7 +56,25 @@ const messageEvent: ObjectEvent<Events.MessageCreate> = {
                     await message.reply({ embeds: [embed] });
                     return;
                 }
-                bot.handleAttendanceReceived(validQRCode, message, connection);
+                bot.handleAttendanceReceived(
+                    validQRCode,
+                    async (status) => {
+                        if (status == "invalid") {
+                            const embed = bot.brandedEmbed().setDescription("Ungültiger Anwesenheitserfassungs-QR-Code ☹️");
+                            await message.reply({ embeds: [embed] });
+                        } else if (status == "success") {
+                            const embed = bot
+                                .brandedEmbed()
+                                .setTitle("Hier klicken, um Anwesenheit zu erfassen")
+                                .setDescription(
+                                    "QR-Code gefunden 🎉\n\nUm deine Anwesenheit automatisch zu erfassen, nutze den `/login` Befehl, um deine Anmeldedaten zu hinterlegen.",
+                                )
+                                .setURL(message.content);
+                            await message.reply({ embeds: [embed], content: "@here" });
+                        }
+                    },
+                    connection,
+                );
             } catch (e) {
                 if (axios.isAxiosError(e)) {
                     console.log(e.response?.data ?? e);

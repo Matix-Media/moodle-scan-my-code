@@ -32,6 +32,12 @@ import messageEvent from "./events/message.ts";
 import router from "./http/router.ts";
 import MoodleSession, { AttendanceUpdateError, LoginError } from "./moodle/session.ts";
 
+declare module "fastify" {
+    interface FastifyInstance {
+        bot: () => Bot;
+    }
+}
+
 export default class Bot {
     private discordToken: string;
     private botUrl: string;
@@ -107,6 +113,7 @@ export default class Bot {
         console.log(staticPath);
         this.http.register(fastifyStatic, { root: staticPath });
         this.http.register(router);
+        this.http.decorate("bot", () => this);
     }
 
     public async start() {
@@ -172,10 +179,13 @@ export default class Bot {
         return `${this.botUrl}/scanner.html?key=${token}`;
     }
 
+    public generateLoginUrl(connection: typeof moodleConnection.$inferSelect) {
+        return `${connection.moodleUrlBase}/login/index.php`;
+    }
+
     public async handleAttendanceReceived(
         url: string,
-
-        originalMessage: OmitPartialGroupDMChannel<Message<boolean>>,
+        onUpdate: (event: "invalid" | "success") => void,
         connection: typeof moodleConnection.$inferSelect,
     ) {
         try {
@@ -183,25 +193,17 @@ export default class Bot {
             const qrPass = parsedUrl.searchParams.get("qrpass");
             if (qrPass === null) {
                 console.log("QR code does not contain a valid QR pass");
-                const embed = this.brandedEmbed().setDescription("QR-Code enthält keinen QR Pass ☹️");
-                await originalMessage.reply({ embeds: [embed] });
+                onUpdate("invalid");
                 return;
             }
             const sessId = parsedUrl.searchParams.get("sessid");
             if (sessId === null) {
                 console.log("QR code does not contain a valid session ID");
-                const embed = this.brandedEmbed().setDescription("QR-Code enthält keine Session ID ☹️");
-                await originalMessage.reply({ embeds: [embed] });
+                onUpdate("invalid");
                 return;
             }
 
-            const embed = this.brandedEmbed()
-                .setTitle("Hier klicken, um Anwesenheit zu erfassen")
-                .setDescription(
-                    "QR-Code gefunden 🎉\n\nUm deine Anwesenheit automatisch zu erfassen, nutze den `/login` Befehl, um deine Anmeldedaten zu hinterlegen.",
-                )
-                .setURL(url);
-            await originalMessage.reply({ embeds: [embed], content: "@here" });
+            onUpdate("success")
 
             const loggedInUsers = await this.db.select().from(moodleUser).where(eq(moodleUser.connectionId, connection.id));
 

@@ -24,7 +24,7 @@
             const scanner = new QrScanner(document.getElementById('live-feed'), result => {
                 console.log(result);
                 console.log("Sending to server with key: " + key);
-                fetch("/submit", {
+                fetch("/scan-qr-code/submit", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -33,11 +33,18 @@
                         key: key,
                         data: result
                     })
-                }).then(response => {
-                    if (response.status === 200) {
+                }).then(async response => {
+                    if (response.status === 201) {
                         alert("QR-Code erfolgreich gescannt!");
                     } else {
-                        alert("QR-Code konnte nicht gescannt werden (" + response.status + ").");
+                        try {
+                            let errorMessage = "Unknown error.";
+                            const body = await response.json();
+                            if (body.error) errorMessage = body.error;
+                            alert("QR-Code konnte nicht gescannt werden (" + response.status + "): " + errorMessage);
+                        } catch (err) {
+                            alert("Unbekannter Fehler beim Übermitteln des QR-Codes: " + err);
+                        }
                     }
                 })
             });
