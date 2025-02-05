@@ -7,8 +7,10 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
 ENV PYTHONUNBUFFERED=1
 
-# enable corepack for pnpm package manager
+# Due to key rotation from npm, we need to update corepack
+RUN npm install -g corepack@latest
 
+# enable corepack for pnpm package manager
 RUN corepack enable
 
 # copy source code
