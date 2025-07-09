@@ -9,12 +9,12 @@ export default function router(fastify: FastifyInstance, options: FastifyPluginO
         async (req, reply) => {
             const scanToken = fastify.bot().getScanToken(req.body.key);
             if (!scanToken) {
-                req.log.warn("SCAN SUBMIT", `Invalid key: ${req.body.key}`);
+                req.log.warn(`SCAN SUBMIT - Invalid key: ${req.body.key}`);
                 return reply.status(401).send({ error: "Invalid key." });
             }
 
             if (!req.body.data.startsWith(fastify.bot().generateLoginUrl(scanToken.connection))) {
-                req.log.warn("SCAN SUBMIT", `Invalid URL: ${req.body.data}`);
+                req.log.warn(`SCAN SUBMIT - Invalid URL: ${req.body.data}`);
                 return reply.status(400).send({ error: "Invalid url." });
             }
 
@@ -31,10 +31,10 @@ export default function router(fastify: FastifyInstance, options: FastifyPluginO
                 );
             } catch (err) {
                 if (err instanceof InvalidQRCodeError) {
-                    req.log.warn("SCAN SUBMIT", `Invalid QR code: ${req.body.data}`);
+                    req.log.warn(`SCAN SUBMIT - Invalid QR code: ${req.body.data}`);
                     return reply.status(400).send({ error: "Invalid qr-code." });
                 } else {
-                    req.log.error("SCAN SUBMIT", `Error processing QR code: ${req.body.data}`, err);
+                    req.log.error(`SCAN SUBMIT - Error processing QR code: ${req.body.data}`, err);
                     return reply.status(500).send({ error: "Internal server error." });
                 }
             }
