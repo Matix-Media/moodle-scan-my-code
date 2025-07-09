@@ -13,7 +13,7 @@ export default function router(fastify: FastifyInstance, options: FastifyPluginO
                 return reply.status(401).send({ error: "Invalid key." });
             }
 
-            if (!req.body.data.startsWith(fastify.bot().generateLoginUrl(scanToken.connection))) {
+            if (!req.body.data.startsWith(scanToken.connection.moodleUrlBase + "/mod/attendance/attendance.php")) {
                 req.log.warn(`SCAN SUBMIT - Invalid URL: ${req.body.data}`);
                 return reply.status(400).send({ error: "Invalid url." });
             }

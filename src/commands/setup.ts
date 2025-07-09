@@ -20,6 +20,7 @@ const setupCommand: ObjectCommand = {
             return;
         }
 
+        // Sanitize the Moodle URL to ensure it does not end with a slash
         const moodleBaseUrl = interaction.options.getString("moodle", true).replace(/\/$/, "");
 
         await bot.db
