@@ -67,10 +67,30 @@ const loginCommand: ObjectCommand = {
             embeds: [new EmbedBuilder().setColor(0xf48d2b).setDescription("✅ Anmeldung erfolgreich 🎉\n🔄 Speichere Anmeldedaten...")],
         });
 
+        let encryptedPassword: string;
+        try {
+            encryptedPassword = bot.encryptPassword(password);
+        } catch (err) {
+            console.error(err);
+            await interaction.editReply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(0xf48d2b)
+                        .setDescription(
+                            "✅ Anmeldung erfolgreich 🎉\n⛔ Speichern fehlgeschlagen ☹️ Das Passwort konnte nicht verschlüsselt werden.",
+                        ),
+                ],
+            });
+            return;
+        }
+
         await bot.db
             .insert(moodleUser)
             .values({ discordId: interaction.user.id, username: username, password: password, connectionId: connection.id })
-            .onConflictDoUpdate({ target: [moodleUser.discordId, moodleUser.connectionId], set: { username: username, password: password } });
+            .onConflictDoUpdate({
+                target: [moodleUser.discordId, moodleUser.connectionId],
+                set: { username: username, password: encryptedPassword },
+            });
 
         await interaction.editReply({
             embeds: [

@@ -1,6 +1,6 @@
 import fastifyStatic from "@fastify/static";
 import childProcess from "child_process";
-import crypto from "crypto";
+import crypto, { CipherGCM, DecipherGCM } from "crypto";
 import {
     CacheType,
     ChatInputCommandInteraction,
@@ -43,6 +43,7 @@ export default class Bot {
     private commands = [setupCommand, loginCommand, logoutCommand, statusCommand, teardownCommand, scanCommand];
     private connectedChannels: string[] = [];
     private scanTokens: Record<string, ScanToken> = {};
+    private encryptionKey: Buffer<ArrayBuffer>;
     private readonly http: FastifyInstance;
 
     public readonly db: ReturnType<typeof drizzle>;
@@ -50,6 +51,11 @@ export default class Bot {
     public readonly rest: REST;
     public readonly applicationId: string;
     public static readonly SCAN_TOKEN_EXPIRATION = 1000 * 60 * 5; // 5 minutes
+    private static readonly ENCRYPTION_SETTINGS = {
+        saltRounds: 10,
+        algorithm: "aes-256-gcm",
+        ivLength: 16,
+    };
 
     constructor() {
         dotenv.config();
@@ -75,6 +81,12 @@ export default class Bot {
         if (databaseUrl === undefined) {
             throw new Error("DATABASE_URL is not defined");
         }
+
+        const encryptionKey = process.env.ENCRYPTION_KEY;
+        if (encryptionKey === undefined) {
+            throw new Error("ENCRYPTION_KEY is not defined");
+        }
+        this.encryptionKey = Buffer.from(encryptionKey, "hex");
 
         this.db = drizzle(databaseUrl);
 
@@ -156,6 +168,28 @@ export default class Bot {
         return this.connectedChannels.includes(channelId);
     }
 
+    public encryptPassword(password: string) {
+        const iv = crypto.randomBytes(Bot.ENCRYPTION_SETTINGS.ivLength);
+        const cipher = crypto.createCipheriv(Bot.ENCRYPTION_SETTINGS.algorithm, this.encryptionKey, iv) as CipherGCM;
+        let encrypted = cipher.update(password, "utf8", "hex");
+        encrypted += cipher.final("hex");
+        const tag = cipher.getAuthTag();
+        return `${iv.toString("hex")}:${encrypted}:${tag.toString("hex")}`;
+    }
+
+    public decryptPassword(encryptedPassword: string) {
+        const [ivHex, encryptedHex, tagHex] = encryptedPassword.split(":");
+        const iv = Buffer.from(ivHex, "hex");
+        const encrypted = Buffer.from(encryptedHex, "hex");
+        const tag = Buffer.from(tagHex, "hex");
+
+        const decipher = crypto.createDecipheriv(Bot.ENCRYPTION_SETTINGS.algorithm, this.encryptionKey, iv) as DecipherGCM;
+        decipher.setAuthTag(tag);
+        let decrypted = decipher.update(encrypted, undefined, "utf8");
+        decrypted += decipher.final("utf8");
+        return decrypted;
+    }
+
     public createScanToken(connection: typeof moodleConnection.$inferSelect, createdBy: string) {
         const token = crypto.randomBytes(16).toString("hex");
         this.scanTokens[token] = { createdAt: new Date(), connection, createdBy };
@@ -230,6 +264,14 @@ export default class Bot {
                                 ),
                             ],
                         });
+                    } else if (err instanceof DecryptionError) {
+                        dms.send({
+                            embeds: [
+                                this.brandedEmbed().setDescription(
+                                    "Automatische Anwesenheitserfassung fehlgeschlagen ☹️\n\nDas Passwort für deinen Account konnte nicht entschlüsselt werden. Bitte überprüfe deine Anmeldedaten.",
+                                ),
+                            ],
+                        });
                     } else {
                         dms.send({
                             embeds: [
@@ -245,7 +287,15 @@ export default class Bot {
                     console.log("Updating attendance for " + user.discordId + "...");
                     const session = new MoodleSession(this, connection);
 
-                    await session.login(user.username, user.password);
+                    let decryptedPassword: string;
+                    try {
+                        decryptedPassword = this.decryptPassword(user.password);
+                    } catch (err) {
+                        console.error("Error decrypting password for " + user.discordId + ":", err);
+                        throw new DecryptionError("Failed to decrypt password");
+                    }
+
+                    await session.login(user.username, decryptedPassword);
                     await session.updateAttendance(qrPass, sessId);
                 };
 
@@ -315,4 +365,11 @@ export interface ScanToken {
     createdAt: Date;
     connection: typeof moodleConnection.$inferSelect;
     createdBy: string;
+}
+
+class DecryptionError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "DecryptionError";
+    }
 }
