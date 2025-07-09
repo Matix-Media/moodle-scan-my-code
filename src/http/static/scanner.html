@@ -16,6 +16,8 @@
     <script type="module">
         import QrScanner from 'https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js';
 
+        let lastScanAt = 0;
+
         const params = new URLSearchParams(window.location.search);
         if (!params.has("key")) {
             alert("Es wurde kein Key übergeben. Bitte versuche den Link neu zu öffnen.");
@@ -28,6 +30,14 @@
 
             } else {
                 const scanner = new QrScanner(document.getElementById('live-feed'), result => {
+                    const now = Date.now();
+                    if (now - lastScanAt < 2000) {  // 2 Sekunden warten, um doppelte Scans zu vermeiden
+                        console.log("Scan zu schnell, Ignoriere: " + result);
+                        return;
+                    }
+
+                    lastScanAt = now;
+
                     console.log("QR-Code erkannt:");
                     console.log(result);
                     console.log("Sending to server with key: " + key);
