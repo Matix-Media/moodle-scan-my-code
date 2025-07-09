@@ -61,7 +61,7 @@ const statusCommand: ObjectCommand = {
 
         try {
             const session = new MoodleSession(bot, connection);
-            await session.login(existingUser[0].username, existingUser[0].password);
+            await session.login(existingUser[0].username, bot.decryptPassword(existingUser[0].password));
             await interaction.editReply({
                 embeds: [
                     new EmbedBuilder()
