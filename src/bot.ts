@@ -106,7 +106,7 @@ export default class Bot {
 
         this.rest = new REST({ version: "10" }).setToken(this.discordToken);
 
-        this.http = fastify();
+        this.http = fastify({ logger: true });
         const staticPath = path.join(__dirname, "./http/static");
         console.log(staticPath);
         this.http.register(fastifyStatic, { root: staticPath });
