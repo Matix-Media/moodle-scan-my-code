@@ -1,5 +1,5 @@
 import { EmbedBuilder, InteractionContextType, SlashCommandBuilder } from "discord.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { ObjectCommand } from "../bot";
 import { moodleConnection, moodleUser } from "../db/schema";
 import MoodleSession, { LoginError } from "../moodle/session";
@@ -84,13 +84,25 @@ const loginCommand: ObjectCommand = {
             return;
         }
 
-        await bot.db
-            .insert(moodleUser)
-            .values({ discordId: interaction.user.id, username: username, password: password, connectionId: connection.id })
-            .onConflictDoUpdate({
-                target: [moodleUser.discordId, moodleUser.connectionId],
-                set: { username: username, password: encryptedPassword },
-            });
+        const existingUser = await bot.db
+            .select()
+            .from(moodleUser)
+            .where(and(eq(moodleUser.discordId, interaction.user.id), eq(moodleUser.connectionId, connection.id)))
+            .limit(1)
+            .execute();
+
+        if (existingUser.length > 0) {
+            // Update existing user
+            await bot.db
+                .update(moodleUser)
+                .set({ username: username, password: encryptedPassword })
+                .where(and(eq(moodleUser.discordId, interaction.user.id), eq(moodleUser.connectionId, connection.id)))
+                .execute();
+        } else {
+            await bot.db
+                .insert(moodleUser)
+                .values({ discordId: interaction.user.id, username: username, password: password, connectionId: connection.id });
+        }
 
         await interaction.editReply({
             embeds: [
