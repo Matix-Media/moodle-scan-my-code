@@ -9,8 +9,6 @@ import {
     EmbedBuilder,
     Events,
     GatewayIntentBits,
-    Message,
-    OmitPartialGroupDMChannel,
     REST,
     Routes,
     SlashCommandBuilder,
@@ -140,7 +138,7 @@ export default class Bot {
         await this.rest.put(Routes.applicationCommands(this.applicationId), { body: commandsJson });
 
         console.log("Starting HTTP server...");
-        await this.http.listen({ port: 3000 });
+        await this.http.listen({ port: 3000, host: "0.0.0.0" });
 
         console.log("Bot started");
     }
@@ -203,7 +201,7 @@ export default class Bot {
                 return;
             }
 
-            onUpdate("success")
+            onUpdate("success");
 
             const loggedInUsers = await this.db.select().from(moodleUser).where(eq(moodleUser.connectionId, connection.id));
 
