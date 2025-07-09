@@ -25,6 +25,7 @@ const scanCommand: ObjectCommand = {
         const token = bot.createScanToken(connection, interaction.user.id);
         await interaction.reply({
             embeds: [bot.brandedEmbed().setDescription(`Du kannst den QR-Code über folgende URL scannen: ${bot.generateScanTokenUrl(token)}`)],
+            ephemeral: true,
         });
 
         setTimeout(async () => {
