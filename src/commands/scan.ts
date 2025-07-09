@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { eq } from "drizzle-orm";
-import { ObjectCommand } from "../bot";
+import Bot, { ObjectCommand } from "../bot";
 import { moodleConnection } from "../db/schema";
 
 const scanCommand: ObjectCommand = {
@@ -26,6 +26,12 @@ const scanCommand: ObjectCommand = {
         await interaction.reply({
             embeds: [bot.brandedEmbed().setDescription(`Du kannst den QR-Code über folgende URL scannen: ${bot.generateScanTokenUrl(token)}`)],
         });
+
+        setTimeout(async () => {
+            await interaction.editReply({
+                embeds: [bot.brandedEmbed().setDescription("Die Scan-URL ist abgelaufen. Nutze den `/scan` Befehl, um eine neue zu generieren.")],
+            });
+        }, Bot.SCAN_TOKEN_EXPIRATION);
     },
 };
 

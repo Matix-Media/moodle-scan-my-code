@@ -49,6 +49,7 @@ export default class Bot {
     public readonly client: Client;
     public readonly rest: REST;
     public readonly applicationId: string;
+    public static readonly SCAN_TOKEN_EXPIRATION = 1000 * 60 * 5; // 5 minutes
 
     constructor() {
         dotenv.config();
@@ -166,7 +167,7 @@ export default class Bot {
         if (scanToken === undefined) {
             return undefined;
         }
-        if (scanToken.createdAt.getTime() + 1000 * 60 * 5 < Date.now()) {
+        if (scanToken.createdAt.getTime() + Bot.SCAN_TOKEN_EXPIRATION < Date.now()) {
             delete this.scanTokens[token];
             return undefined;
         }

@@ -19,7 +19,7 @@ export default function router(fastify: FastifyInstance, options: FastifyPluginO
             }
 
             try {
-                const result = await new Promise<void>((resolve, reject) =>
+                await new Promise<void>((resolve, reject) =>
                     fastify.bot().handleAttendanceReceived(
                         req.body.data,
                         (event) => {
