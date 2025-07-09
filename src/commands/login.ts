@@ -96,7 +96,7 @@ const loginCommand: ObjectCommand = {
             await bot.db
                 .update(moodleUser)
                 .set({ username: username, password: encryptedPassword })
-                .where(and(eq(moodleUser.discordId, interaction.user.id), eq(moodleUser.connectionId, connection.id)))
+                .where(eq(moodleUser.id, existingUser[0].id))
                 .execute();
         } else {
             await bot.db
