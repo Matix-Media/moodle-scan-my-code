@@ -1,3 +1,4 @@
+import { TextChannel } from "discord.js";
 import { FastifyInstance, FastifyPluginOptions } from "fastify";
 
 class InvalidQRCodeError extends Error {}
@@ -38,6 +39,19 @@ export default function router(fastify: FastifyInstance, options: FastifyPluginO
                     return reply.status(500).send({ error: "Internal server error." });
                 }
             }
+
+            const scannedBy = fastify.bot().client.users.cache.get(scanToken.createdBy);
+            if (scannedBy)
+                (fastify.bot().client.channels.cache.get(scanToken.connection.channelId) as TextChannel | undefined)?.send({
+                    embeds: [
+                        fastify
+                            .bot()
+                            .brandedEmbed()
+                            .setDescription(
+                                `ℹ️ Nutzer <@${scannedBy.id}> hat eine QR-Code-Anmeldung gestartet.\n\nWenn du deine Anmeldedaten noch nicht hinterlegt hast, kannst du das mit dem Befehl \`/login\` tun.\n\nWenn du deine Anmeldedaten bereits hinterlegt hast, wirst du über deine Direct Messages benachrichtigt, sobald deine Anwesenheit erfasst wurde.`,
+                            ),
+                    ],
+                });
 
             return reply.status(201).send();
         },
