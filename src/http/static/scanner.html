@@ -227,6 +227,23 @@
             justify-content: center;
             /* Improved mobile visibility */
             border: 2px solid rgba(255, 255, 255, 0.2);
+            /* Make clickable like success message */
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .error-message:hover {
+            background: #dc3545;
+            transform: translateY(-1px);
+        }
+
+        .error-message::after {
+            content: "👆 Klicken zum Schließen";
+            display: block;
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 8px;
         }
 
         .success-message {
@@ -338,6 +355,12 @@
                 min-height: 70px;
             }
 
+            .error-message::after {
+                content: "👆 Tippen zum Schließen";
+                font-size: 11px;
+                margin-top: 6px;
+            }
+
             .loading-text {
                 font-size: 14px;
                 padding: 0 24px;
@@ -415,6 +438,10 @@
                 border-radius: 8px;
             }
 
+            .error-message::after {
+                font-size: 10px;
+            }
+
             .loading-text {
                 font-size: 13px;
                 padding: 0 16px;
@@ -484,6 +511,11 @@
                 padding: 14px 20px;
                 font-size: 13px;
                 min-height: 50px;
+            }
+
+            .error-message::after {
+                font-size: 9px;
+                margin-top: 4px;
             }
 
             .loading-text {
@@ -557,6 +589,10 @@
             }
 
             .camera-select:active {
+                transform: scale(0.98);
+            }
+
+            .error-message:active {
                 transform: scale(0.98);
             }
         }
@@ -697,7 +733,7 @@
             }
 
             showError(message) {
-                this.loadingOverlay.innerHTML = `<div class="error-message">${message}</div>`;
+                this.loadingOverlay.innerHTML = `<div class="error-message" onclick="window.app.uiManager.hideError()">${message}</div>`;
                 this.loadingOverlay.style.display = 'flex';
                 this.setScanningState('message');
 
@@ -708,6 +744,11 @@
                 if (this.activeMessageTimeout) {
                     clearTimeout(this.activeMessageTimeout);
                 }
+
+                // Optional: Auto-hide after timeout (like success message)
+                this.activeMessageTimeout = setTimeout(() => {
+                    this.hideError();
+                }, CONFIG.SUCCESS_MESSAGE_DURATION * 3); // 12 seconds for errors
             }
 
             showSuccess(message) {
@@ -808,14 +849,24 @@
             getVideoElement() {
                 return this.videoElement;
             }
+
+            hideError() {
+                this.loadingOverlay.style.display = 'none';
+                this.setScanningState('idle');
+                if (this.activeMessageTimeout) {
+                    clearTimeout(this.activeMessageTimeout);
+                    this.activeMessageTimeout = null;
+                }
+            }
         }
 
         /**
          * API Manager - handles all server communication
          */
         class APIManager {
-            constructor(apiKey) {
-                this.apiKey = apiKey;
+
+            constructor(scanToken) {
+                this.scanToken = scanToken;
             }
 
             async submitQRCode(qrData) {
@@ -826,7 +877,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            key: this.apiKey,
+                            key: this.scanToken,
                             data: qrData
                         })
                     });
@@ -973,7 +1024,7 @@
                 this.uiManager = new UIManager();
                 this.apiManager = null;
                 this.scannerManager = null;
-                this.apiKey = null;
+                this.scanToken = null;
             }
 
             async initialize() {
@@ -982,13 +1033,13 @@
                     this.uiManager.showLoading();
 
                     // Validate API key
-                    this.apiKey = this.getApiKeyFromURL();
-                    if (!this.apiKey) {
+                    this.scanToken = this.getScanTokenFromURL();
+                    if (!this.scanToken) {
                         throw new Error('Es wurde kein Key übergeben. Bitte versuche den Link neu zu öffnen.');
                     }
 
                     // Initialize managers
-                    this.apiManager = new APIManager(this.apiKey);
+                    this.apiManager = new APIManager(this.scanToken);
                     this.scannerManager = new ScannerManager(
                         this.uiManager.getVideoElement(),
                         this.apiManager,
@@ -1007,7 +1058,7 @@
                 }
             }
 
-            getApiKeyFromURL() {
+            getScanTokenFromURL() {
                 const params = new URLSearchParams(window.location.search);
                 return params.get('key');
             }
