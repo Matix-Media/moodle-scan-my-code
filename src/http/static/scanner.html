@@ -1,90 +1,1022 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moodle Scan My Code</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent">
+    <meta name="theme-color" content="#36393f">
+    <title>Moodle - Scan My Code</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #36393f;
+            color: #dcddde;
+            height: 100vh;
+            height: 100dvh;
+            /* Dynamic viewport height for mobile */
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .header {
+            background: #2f3136;
+            border-bottom: 1px solid #202225;
+            padding: 8px 12px;
+            box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            z-index: 1000;
+            position: relative;
+            /* Handle notches and safe areas */
+            padding-top: max(8px, env(safe-area-inset-top));
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+            /* Prevent scrolling on mobile */
+            position: sticky;
+            top: 0;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-align: center;
+        }
+
+        .header h1::before {
+            content: "📱";
+            font-size: 20px;
+        }
+
+        .camera-select {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #40444b;
+            color: #dcddde;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+            max-width: 280px;
+            box-shadow: inset 0 0 0 1px #202225;
+            /* Touch-friendly sizing */
+            min-height: 48px;
+            -webkit-appearance: none;
+            appearance: none;
+            /* Dropdown arrow */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dcddde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .camera-select:hover {
+            background: #484c52;
+            /* Keep the same arrow on hover */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dcddde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        .camera-select:focus {
+            background: #484c52;
+            box-shadow: 0 0 0 2px #5865f2;
+            /* Keep the same arrow on focus */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dcddde' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        .camera-select option {
+            background: #40444b;
+            color: #dcddde;
+        }
+
+        .scanner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 70px);
+            height: calc(100dvh - 70px);
+            padding: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+        }
+
+        .video-wrapper {
+            position: relative;
+            background: #2f3136;
+            border-radius: 12px;
+            border: 1px solid #202225;
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: auto;
+            max-width: 90vw;
+            max-height: calc(100vh - 120px);
+            /* Prevent tap to zoom */
+            touch-action: manipulation;
+        }
+
+        #live-feed {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: calc(100vh - 140px);
+            object-fit: contain;
+            border-radius: 12px;
+            /* Prevent context menu on mobile */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* Improve mobile performance */
+            will-change: transform;
+            transform: translateZ(0);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(54, 57, 63, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-spinner {
+            width: 56px;
+            height: 56px;
+            border: 5px solid #40444b;
+            border-top: 5px solid #5865f2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: #b9bbbe;
+            text-align: center;
+            font-weight: 500;
+            padding: 0 20px;
+            line-height: 1.4;
+            max-width: calc(100vw - 40px);
+        }
+
+        .error-message {
+            background: #ed4245;
+            color: #ffffff;
+            padding: 20px 24px;
+            border-radius: 8px;
+            margin: 20px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+            line-height: 1.4;
+            max-width: calc(100vw - 40px);
+            /* Touch-friendly sizing for errors */
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Improved mobile visibility */
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .success-message {
+            background: #57f287;
+            color: #ffffff;
+            padding: 24px 28px;
+            border-radius: 12px;
+            margin: 20px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 16px;
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            line-height: 1.4;
+            max-width: calc(100vw - 40px);
+            /* Touch-friendly sizing */
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Improved mobile visibility */
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .success-message:hover {
+            background: #51cf66;
+            transform: translateY(-1px);
+        }
+
+        .success-message::after {
+            content: "👆 Klicken zum Schließen";
+            display: block;
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px 16px;
+                min-height: 80px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+                color: #ffffff;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            }
+
+            .camera-select {
+                width: 100%;
+                max-width: 280px;
+                min-height: 48px;
+                border: 1px solid #5865f2;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            }
+
+            .scanner-container {
+                height: calc(100vh - 80px);
+                height: calc(100dvh - 80px);
+                padding: 12px;
+            }
+
+            .video-wrapper {
+                max-width: 95vw;
+                max-height: 70vh;
+                max-height: 70dvh;
+                border: 2px solid #5865f2;
+                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+                /* Mobile specific: ensure square aspect ratio */
+                aspect-ratio: 1;
+                width: 100%;
+            }
+
+            #live-feed {
+                max-height: 70vh;
+                max-height: 70dvh;
+                border-radius: 8px;
+                /* Mobile specific: fill container */
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .success-message {
+                left: 16px;
+                right: 16px;
+                transform: none;
+                margin: 20px 16px;
+                padding: 20px 24px;
+                font-size: 16px;
+                min-height: 80px;
+            }
+
+            .success-message::after {
+                content: "👆 Tippen zum Schließen";
+                font-size: 12px;
+                margin-top: 6px;
+            }
+
+            .error-message {
+                margin: 20px 16px;
+                padding: 18px 22px;
+                font-size: 14px;
+                min-height: 70px;
+            }
+
+            .loading-text {
+                font-size: 14px;
+                padding: 0 24px;
+            }
+
+            .loading-spinner {
+                width: 52px;
+                height: 52px;
+                border-width: 4px;
+            }
+        }
+
+        /* Optimierungen für sehr kleine Smartphones */
+        @media (max-width: 480px) {
+            .header {
+                padding: 8px 12px;
+                min-height: 70px;
+            }
+
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .header h1::before {
+                font-size: 18px;
+            }
+
+            .camera-select {
+                font-size: 13px;
+                min-height: 44px;
+                padding: 8px 14px;
+            }
+
+            .scanner-container {
+                height: calc(100vh - 70px);
+                height: calc(100dvh - 70px);
+                padding: 8px;
+            }
+
+            .video-wrapper {
+                max-width: 98vw;
+                max-height: 72vh;
+                max-height: 72dvh;
+                border-radius: 8px;
+                /* Small mobile: ensure square aspect ratio */
+                aspect-ratio: 1;
+                width: 100%;
+            }
+
+            #live-feed {
+                border-radius: 8px;
+                /* Small mobile: fill container */
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .success-message {
+                margin: 16px 12px;
+                padding: 16px 20px;
+                font-size: 15px;
+                min-height: 70px;
+                border-radius: 8px;
+            }
+
+            .success-message::after {
+                font-size: 11px;
+            }
+
+            .error-message {
+                margin: 16px 12px;
+                padding: 16px 20px;
+                font-size: 13px;
+                min-height: 60px;
+                border-radius: 8px;
+            }
+
+            .loading-text {
+                font-size: 13px;
+                padding: 0 16px;
+            }
+
+            .loading-spinner {
+                width: 48px;
+                height: 48px;
+                border-width: 3px;
+            }
+        }
+
+        /* Optimierungen für Querformat auf Smartphones */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .header {
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 6px 12px;
+                min-height: 50px;
+            }
+
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .camera-select {
+                max-width: 200px;
+                min-height: 36px;
+            }
+
+            .scanner-container {
+                height: calc(100vh - 50px);
+                height: calc(100dvh - 50px);
+                padding: 8px;
+            }
+
+            .video-wrapper {
+                max-height: 85vh;
+                max-height: 85dvh;
+                aspect-ratio: 16/9;
+                width: auto;
+                max-width: 95vw;
+            }
+
+            #live-feed {
+                max-height: 85vh;
+                max-height: 85dvh;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+            }
+
+            .success-message {
+                margin: 12px 20px;
+                padding: 14px 20px;
+                font-size: 14px;
+                min-height: 50px;
+            }
+
+            .success-message::after {
+                font-size: 10px;
+                margin-top: 4px;
+            }
+
+            .error-message {
+                margin: 12px 20px;
+                padding: 14px 20px;
+                font-size: 13px;
+                min-height: 50px;
+            }
+
+            .loading-text {
+                font-size: 13px;
+            }
+
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border-width: 3px;
+                margin-bottom: 12px;
+            }
+        }
+
+        /* Discord-style scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2e3338;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #202225;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #1e2124;
+        }
+
+        /* Additional Discord-style animations */
+        .video-wrapper {
+            transition: all 0.15s ease;
+        }
+
+        .video-wrapper:hover {
+            box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .camera-select::-ms-expand {
+            display: none;
+        }
+
+        /* Spezielle Smartphone-Optimierungen */
+        @media (max-width: 768px) {
+
+            /* Verbesserter Textkontrast für mobile */
+            .header h1 {
+                color: #ffffff;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            }
+
+            /* Bessere Sichtbarkeit der Kameraauswahl */
+            .camera-select {
+                border: 1px solid #5865f2;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            }
+
+            /* Verbesserter Video-Rahmen für mobile */
+            .video-wrapper {
+                border: 2px solid #5865f2;
+                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+            }
+
+            /* Bessere Interaktivität */
+            .success-message:active {
+                transform: scale(0.98);
+            }
+
+            .camera-select:active {
+                transform: scale(0.98);
+            }
+        }
+
+        /* Zusätzliche PWA-Optimierungen */
+        @media (display-mode: standalone) {
+            .header {
+                /* Mehr Platz für PWA-Modus */
+                padding-top: max(16px, env(safe-area-inset-top));
+            }
+        }
+
+        /* Desktop-spezifische Optimierungen */
+        @media (min-width: 769px) {
+            .video-wrapper {
+                max-width: 600px;
+                max-height: 600px;
+                aspect-ratio: auto;
+                width: auto;
+                height: auto;
+            }
+
+            #live-feed {
+                max-width: 600px;
+                max-height: 600px;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <video id="live-feed"></video>
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initialisiere Scanner...</div>
+    </div>
+
+    <div class="header">
+        <h1>Moodle - Scan My Code</h1>
+        <select class="camera-select" id="camera-select" style="display: none;">
+            <option value="">Kamera wählen...</option>
+        </select>
+    </div>
+
+    <div class="scanner-container">
+        <div class="video-wrapper">
+            <video id="live-feed"></video>
+        </div>
+    </div>
+
     <script type="module"
         src="https://cdn.jsdelivr.net/npm/qr-scanner@1.2.0/qr-scanner-worker.min.js"></script>
-
 
     <script type="module">
         import QrScanner from 'https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js';
 
-        let lastScanAt = 0;
+        /**
+         * Configuration constants
+         */
+        const CONFIG = {
+            SCAN_COOLDOWN: 1500, // 1.5 seconds for mobile
+            SUCCESS_MESSAGE_DURATION: 4000, // 4 seconds for mobile
+            API_ENDPOINT: '/scan-qr-code/submit'
+        };
 
-        const params = new URLSearchParams(window.location.search);
-        if (!params.has("key")) {
-            alert("Es wurde kein Key übergeben. Bitte versuche den Link neu zu öffnen.");
-        } else {
-            const key = params.get("key");
+        /**
+         * UI Manager - handles all UI interactions and state
+         */
+        class UIManager {
+            constructor() {
+                this.loadingOverlay = document.getElementById('loading-overlay');
+                this.videoElement = document.getElementById('live-feed');
+                this.cameraSelect = document.getElementById('camera-select');
+                this.scanningState = 'idle'; // 'idle', 'loading', 'processing', 'message'
+                this.activeMessageTimeout = null;
+            }
 
-            const cameras = await QrScanner.listCameras(true);
-            if (cameras.length === 0) {
-                alert("Es wurden keine Kameras gefunden. Bitte überprüfe deine Kameraeinstellungen.");
+            // Atomic state management - no gaps between states
+            setScanningState(newState) {
+                this.scanningState = newState;
+            }
 
-            } else {
-                const scanner = new QrScanner(document.getElementById('live-feed'), result => {
-                    const now = Date.now();
-                    if (now - lastScanAt < 2000) {  // 2 Sekunden warten, um doppelte Scans zu vermeiden
-                        console.log("Scan zu schnell, Ignoriere: " + result);
-                        return;
+            isShowingMessage() {
+                return this.scanningState !== 'idle';
+            }
+
+            setProcessing(processing) {
+                if (processing) {
+                    this.setScanningState('processing');
+                } else {
+                    // Only reset to idle if not already in message state
+                    if (this.scanningState === 'processing') {
+                        this.setScanningState('idle');
                     }
+                }
+            }
 
-                    lastScanAt = now;
+            clearMessageState() {
+                this.setScanningState('idle');
+                this.loadingOverlay.style.display = 'none';
+                if (this.activeMessageTimeout) {
+                    clearTimeout(this.activeMessageTimeout);
+                    this.activeMessageTimeout = null;
+                }
+            }
 
-                    console.log("QR-Code erkannt:");
-                    console.log(result);
-                    console.log("Sending to server with key: " + key);
-                    fetch("/scan-qr-code/submit", {
+            showLoading(message = 'Initialisiere Scanner...') {
+                this.loadingOverlay.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">${message}</div>
+                `;
+                this.loadingOverlay.style.display = 'flex';
+                this.setScanningState('loading');
+            }
+
+            hideLoading() {
+                this.loadingOverlay.style.display = 'none';
+                this.setScanningState('idle');
+            }
+
+            showError(message) {
+                this.loadingOverlay.innerHTML = `<div class="error-message">${message}</div>`;
+                this.loadingOverlay.style.display = 'flex';
+                this.setScanningState('message');
+
+                // Add vibration feedback
+                this.addVibrationFeedback('error');
+
+                // Clear any existing timeout
+                if (this.activeMessageTimeout) {
+                    clearTimeout(this.activeMessageTimeout);
+                }
+            }
+
+            showSuccess(message) {
+                // Clear any existing timeout
+                if (this.activeMessageTimeout) {
+                    clearTimeout(this.activeMessageTimeout);
+                }
+
+                // Hide processing overlay first
+                this.hideProcessing();
+
+                // Add vibration feedback
+                this.addVibrationFeedback('success');
+
+                // Create success overlay (similar to error overlay)
+                this.loadingOverlay.innerHTML = `<div class="success-message" onclick="window.app.uiManager.hideSuccess()">${message}</div>`;
+                this.loadingOverlay.style.display = 'flex';
+
+                // Atomically set message state
+                this.setScanningState('message');
+
+                // Optional: Auto-hide after longer timeout (since it's now clickable)
+                this.activeMessageTimeout = setTimeout(() => {
+                    this.hideSuccess();
+                }, CONFIG.SUCCESS_MESSAGE_DURATION * 2.5); // 10 seconds for mobile
+            }
+
+            hideSuccess() {
+                this.loadingOverlay.style.display = 'none';
+                this.setScanningState('idle');
+                if (this.activeMessageTimeout) {
+                    clearTimeout(this.activeMessageTimeout);
+                    this.activeMessageTimeout = null;
+                }
+            }
+
+            showProcessing(message = 'Verarbeite QR-Code...') {
+                this.loadingOverlay.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">${message}</div>
+                `;
+                this.loadingOverlay.style.display = 'flex';
+                this.setScanningState('processing');
+            }
+
+            hideProcessing() {
+                this.loadingOverlay.style.display = 'none';
+                // Don't change state here - let the next action (success/error) handle it
+            }
+
+            isShowingMessage() {
+                return this.scanningState !== 'idle';
+            }
+
+            setProcessing(processing) {
+                if (processing) {
+                    this.showProcessing();
+                } else {
+                    this.hideProcessing();
+                    // Only reset to idle if not already in message state
+                    if (this.scanningState === 'processing') {
+                        this.setScanningState('idle');
+                    }
+                }
+            }
+
+            setupCameraSelect(cameras, onCameraChange) {
+                if (cameras.length <= 1) {
+                    this.cameraSelect.style.display = 'none';
+                    return;
+                }
+
+                // Clear existing options
+                this.cameraSelect.innerHTML = '<option value="">Kamera wählen...</option>';
+
+                // Add camera options
+                cameras.forEach((camera, index) => {
+                    const option = document.createElement('option');
+                    option.value = camera.id;
+                    option.textContent = camera.label || `Kamera ${index + 1}`;
+                    this.cameraSelect.appendChild(option);
+                });
+
+                // Set default camera
+                if (cameras.length > 0) {
+                    this.cameraSelect.value = cameras[0].id;
+                }
+
+                // Show select and add event listener
+                this.cameraSelect.style.display = 'block';
+                this.cameraSelect.addEventListener('change', () => {
+                    if (this.cameraSelect.value) {
+                        onCameraChange(this.cameraSelect.value);
+                    }
+                });
+            }
+
+            getVideoElement() {
+                return this.videoElement;
+            }
+        }
+
+        /**
+         * API Manager - handles all server communication
+         */
+        class APIManager {
+            constructor(apiKey) {
+                this.apiKey = apiKey;
+            }
+
+            async submitQRCode(qrData) {
+                try {
+                    const response = await fetch(CONFIG.API_ENDPOINT, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            key: key,
-                            data: result
+                            key: this.apiKey,
+                            data: qrData
                         })
-                    }).then(async response => {
-                        if (response.status === 201) {
-                            alert("QR-Code erfolgreich gescannt!");
-                        } else {
-                            try {
-                                let errorMessage = "Unknown error.";
-                                const body = await response.json();
-                                if (body.error) errorMessage = body.error;
-                                alert("QR-Code konnte nicht gescannt werden (" + response.status + "): " + errorMessage);
-                            } catch (err) {
-                                alert("Unbekannter Fehler beim Übermitteln des QR-Codes: " + err);
-                            }
+                    });
+
+                    if (response.status === 201) {
+                        return { success: true, message: 'QR-Code erfolgreich gescannt!' };
+                    } else {
+                        let errorMessage = 'Unknown error.';
+                        try {
+                            const body = await response.json();
+                            if (body.error) errorMessage = body.error;
+                        } catch (parseError) {
+                            // Use default error message if parsing fails
                         }
-                    })
-                });
-
-                if (cameras.length > 1) {
-                    const cameraSelect = document.createElement('select');
-                    cameras.forEach((camera, index) => {
-                        const option = document.createElement('option');
-                        option.value = camera.id;
-                        option.textContent = camera.label || `Kamera ${index + 1}`;
-                        cameraSelect.appendChild(option);
-                    });
-                    document.body.appendChild(cameraSelect);
-
-                    cameraSelect.addEventListener('change', () => {
-                        scanner.setCamera(cameraSelect.value);
-                    });
+                        return {
+                            success: false,
+                            message: `QR-Code konnte nicht gescannt werden (${response.status}): ${errorMessage}`
+                        };
+                    }
+                } catch (error) {
+                    return {
+                        success: false,
+                        message: `Netzwerkfehler beim Übermitteln des QR-Codes: ${error.message}`
+                    };
                 }
+            }
+        }
 
-                scanner.start();
+        /**
+         * Scanner Manager - handles QR code scanning logic
+         */
+        class ScannerManager {
+            constructor(videoElement, apiManager, uiManager) {
+                this.videoElement = videoElement;
+                this.apiManager = apiManager;
+                this.uiManager = uiManager;
+                this.scanner = null;
+                this.lastScanAt = 0;
+                this.cameras = [];
             }
 
+            async initialize() {
+                try {
+                    // Load available cameras
+                    this.cameras = await QrScanner.listCameras(true);
+
+                    if (this.cameras.length === 0) {
+                        throw new Error('Es wurden keine Kameras gefunden. Bitte überprüfe deine Kameraeinstellungen.');
+                    }
+
+                    // Initialize scanner
+                    this.scanner = new QrScanner(
+                        this.videoElement,
+                        (result) => this.handleScanResult(result),
+                        {
+                            highlightCodeOutline: true,
+                            highlightScanRegion: true,
+                        }
+                    );
+
+                    // Setup camera selection
+                    this.uiManager.setupCameraSelect(this.cameras, (cameraId) => {
+                        this.switchCamera(cameraId);
+                    });
+
+                    // Start scanning
+                    await this.scanner.start();
+
+                } catch (error) {
+                    console.error('Scanner initialization failed:', error);
+                    throw error;
+                }
+            }
+
+            handleScanResult(result) {
+                const now = Date.now();
+
+                // Don't scan if a message is currently displayed or processing
+                if (this.uiManager.isShowingMessage()) {
+                    console.log('Message displayed or processing, ignoring scan:', result);
+                    return;
+                }
+
+                // Prevent duplicate scans
+                if (now - this.lastScanAt < CONFIG.SCAN_COOLDOWN) {
+                    console.log('Scan too fast, ignoring:', result);
+                    return;
+                }
+
+                this.lastScanAt = now;
+                console.log('QR-Code detected:', result);
+
+                // Add vibration feedback for scan detection
+                this.uiManager.addVibrationFeedback('scan');
+
+                // Submit to server
+                this.submitScan(result);
+            }
+
+            async submitScan(qrData) {
+                // ATOMIC: Set processing state IMMEDIATELY before any async operations
+                this.uiManager.setProcessing(true);
+
+                try {
+                    const result = await this.apiManager.submitQRCode(qrData);
+
+                    if (result.success) {
+                        // ATOMIC: Directly transition from processing to message state
+                        this.uiManager.showSuccess(result.message);
+                    } else {
+                        // ATOMIC: Directly transition from processing to error state
+                        this.uiManager.showError(result.message);
+                    }
+                } catch (error) {
+                    console.error('Scan submission failed:', error);
+
+                    // ATOMIC: Directly transition from processing to error state
+                    this.uiManager.showError('Unbekannter Fehler beim Verarbeiten des QR-Codes.');
+                }
+                // Note: No need to clear processing state here, as show* methods handle the transition
+            }
+
+            switchCamera(cameraId) {
+                if (this.scanner && cameraId) {
+                    this.scanner.setCamera(cameraId);
+                }
+            }
+
+            destroy() {
+                if (this.scanner) {
+                    this.scanner.destroy();
+                    this.scanner = null;
+                }
+                // Clear any UI message state
+                this.uiManager.clearMessageState();
+            }
         }
+
+        /**
+         * Main Application Class
+         */
+        class QRScannerApp {
+            constructor() {
+                this.uiManager = new UIManager();
+                this.apiManager = null;
+                this.scannerManager = null;
+                this.apiKey = null;
+            }
+
+            async initialize() {
+                try {
+                    // Show loading state
+                    this.uiManager.showLoading();
+
+                    // Validate API key
+                    this.apiKey = this.getApiKeyFromURL();
+                    if (!this.apiKey) {
+                        throw new Error('Es wurde kein Key übergeben. Bitte versuche den Link neu zu öffnen.');
+                    }
+
+                    // Initialize managers
+                    this.apiManager = new APIManager(this.apiKey);
+                    this.scannerManager = new ScannerManager(
+                        this.uiManager.getVideoElement(),
+                        this.apiManager,
+                        this.uiManager
+                    );
+
+                    // Initialize scanner
+                    await this.scannerManager.initialize();
+
+                    // Hide loading state
+                    this.uiManager.hideLoading();
+
+                } catch (error) {
+                    console.error('Application initialization failed:', error);
+                    this.uiManager.showError(error.message || 'Fehler beim Initialisieren der Anwendung.');
+                }
+            }
+
+            getApiKeyFromURL() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get('key');
+            }
+
+            destroy() {
+                if (this.scannerManager) {
+                    this.scannerManager.destroy();
+                }
+            }
+        }
+
+        // Application initialization
+        const app = new QRScannerApp();
+
+        // Make app globally available for click handlers
+        window.app = app;
+
+        // Start the application when the page loads
+        window.addEventListener('load', () => {
+            app.initialize();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            app.destroy();
+        });
     </script>
 </body>
 
