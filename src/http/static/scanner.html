@@ -636,6 +636,23 @@
                 this.activeMessageTimeout = null;
             }
 
+            // Add vibration feedback for mobile devices
+            addVibrationFeedback(type) {
+                if (navigator.vibrate) {
+                    switch (type) {
+                        case 'success':
+                            navigator.vibrate([200, 100, 200]); // Success pattern
+                            break;
+                        case 'error':
+                            navigator.vibrate([300, 100, 300, 100, 300]); // Error pattern
+                            break;
+                        case 'scan':
+                            navigator.vibrate(100); // Quick scan feedback
+                            break;
+                    }
+                }
+            }
+
             // Atomic state management - no gaps between states
             setScanningState(newState) {
                 this.scanningState = newState;
