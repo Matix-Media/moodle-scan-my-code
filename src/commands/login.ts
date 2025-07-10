@@ -101,7 +101,7 @@ const loginCommand: ObjectCommand = {
         } else {
             await bot.db
                 .insert(moodleUser)
-                .values({ discordId: interaction.user.id, username: username, password: password, connectionId: connection.id });
+                .values({ discordId: interaction.user.id, username: username, password: encryptedPassword, connectionId: connection.id });
         }
 
         await interaction.editReply({
