@@ -239,10 +239,6 @@ export default class Bot {
 
             onUpdate("success");
 
-            (this.client.channels.cache.get(connection.channelId) as TextChannel | undefined)?.send({
-                embeds: [this.brandedEmbed().setDescription("QR-Code erkannt ✅\n\nBenutzer: " + qrPass + "\nSession-ID: " + sessId)],
-            });
-
             const loggedInUsers = await this.db.select().from(moodleUser).where(eq(moodleUser.connectionId, connection.id));
 
             if (loggedInUsers.length > 0) {
