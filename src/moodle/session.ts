@@ -108,7 +108,8 @@ export default class MoodleSession {
         const attendanceUrl = this.connection.moodleUrlBase + "/mod/attendance/attendance.php?qrpass=" + qrPass + "&sessid=" + sessId;
 
         try {
-            await this.client.get(attendanceUrl);
+            const response = await this.client.get(attendanceUrl);
+            console.log("Attendance update response:", response.data);
         } catch (err) {
             if (axios.isAxiosError(err) && err.response) {
                 const attendanceErrorMatch = ATTENDANCE_ERROR_MATCH_REGEX.exec(err.response.data ?? "");
