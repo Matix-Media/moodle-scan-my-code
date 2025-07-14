@@ -5,8 +5,10 @@ import Bot from "../bot";
 import { moodleConnection } from "../db/schema";
 
 const LOGIN_TOKEN_MATCH_REGEX = /<input type="hidden" name="logintoken" value="([^"]*)">/i;
-const LOGIN_ERROR_MATCH_REGEX = /<a href="#" id="loginerrormessage" class="sr-only">([^"]*)<\/a>/i;
-const ATTENDANCE_ERROR_MATCH_REGEX = /<p class="errormessage">([^"]*)<\/p>/i;
+const LOGIN_ERROR_MATCH_REGEX = /<a href="#" id="loginerrormessage" class="sr-only">([.\S\s]*)<\/a>/i;
+const ATTENDANCE_ERROR_MATCH_REGEX = /<p class="errormessage">([.\S\s]*)<\/p>/i;
+const ATTENDANCE_SUCCESS_MATCH_REGEX =
+    /<div class="alert alert-info alert-block fade in  alert-dismissible" role="alert" data-aria-autofocus="true">([.\S\s]*)<button type="button" class="close" data-dismiss="alert">/i;
 const VERBOSE = false;
 
 export default class MoodleSession {
@@ -109,8 +111,13 @@ export default class MoodleSession {
 
         try {
             const response = await this.client.get(attendanceUrl);
-            console.log("Attendance update response:", response.data);
+            const successMatch = ATTENDANCE_SUCCESS_MATCH_REGEX.exec(response.data);
+            if (successMatch == null || successMatch?.length < 1) {
+                throw new AttendanceUpdateError("Attendance update failed", "Could not find success message");
+            }
+            console.log("Attendance updated successfully:", successMatch[1]);
         } catch (err) {
+            if (err instanceof AttendanceUpdateError) throw err;
             if (axios.isAxiosError(err) && err.response) {
                 const attendanceErrorMatch = ATTENDANCE_ERROR_MATCH_REGEX.exec(err.response.data ?? "");
                 if (attendanceErrorMatch != null && attendanceErrorMatch?.length > 1) {
