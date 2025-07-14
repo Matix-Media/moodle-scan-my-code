@@ -13,7 +13,6 @@ import {
     Routes,
     SlashCommandBuilder,
     SlashCommandOptionsOnlyBuilder,
-    TextChannel,
 } from "discord.js";
 import * as dotenv from "dotenv";
 import { eq } from "drizzle-orm";
@@ -309,14 +308,7 @@ export default class Bot {
                     });
                 };
 
-                try {
-                    await updateAttendance(loggedInUsers[0], connection);
-                } catch (err) {
-                    // TODO: Check if code is invalid (idk how, but it's probably possible) and return a more helpful error to the code submitter
-                    await handleAttendanceUpdateError(loggedInUsers[0], err);
-                }
-
-                const updates: Promise<void>[] = loggedInUsers.slice(1).map(async (user) => {
+                const updates: Promise<void>[] = loggedInUsers.map(async (user) => {
                     try {
                         await updateAttendance(user, connection);
                     } catch (err) {
@@ -327,7 +319,19 @@ export default class Bot {
             }
 
             console.log("Successfully processed qr code");
-        } catch (e) {}
+        } catch (e) {
+            console.error("Error processing qr code:", e);
+            onUpdate("invalid");
+            if (e instanceof AttendanceUpdateError) {
+                console.error("Attendance update error:", e);
+            } else if (e instanceof LoginError) {
+                console.error("Login error:", e);
+            } else if (e instanceof DecryptionError) {
+                console.error("Decryption error:", e);
+            } else {
+                console.error("Unknown error:", e);
+            }
+        }
     }
 
     public async readQrCode(url: string) {
